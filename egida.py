@@ -1,0 +1,6 @@
+#!/usr/bin/python
+
+import src
+
+if __name__ == '__main__':
+    src.Game().run()
