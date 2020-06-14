@@ -7,19 +7,14 @@ class Polyhedron:
     """"Polyhedron data container."""
 
     def __init__(self, vertices, triangles, colors=None):
-        self.vertices = list() # ordered list of points
-        self.lengths = list() # ordered list of lenghts
-        self.triangles = triangles # set of triangles defined as tuples of indices
+        # An ordered list of points.
+        self.vertices = list(vertices)
 
-        if colors is None:
-            self.colors = [[1.0, 0.0, 0.0] for i in vertices]
-        else:
-            self.colors = colors
+        # A set of triangles defined as tuples of indices.
+        self.triangles = {tuple(sorted(point)) for point in triangles}
 
-        for vertex in vertices:
-            l = math.sqrt(sum([v*v for v in vertex]))
-            self.lengths.append(l)
-            self.vertices.append(tuple([v/l for v in vertex]))
+        # An ordered list of colors.
+        self.colors = colors
 
     def get_vertices(self):
         for vertex in self.vertices:
@@ -29,23 +24,13 @@ class Polyhedron:
         for triangle in self.triangles:
             yield triangle
 
-    def get_triangles_and_normal(self):
-        for triangle in self.triangles:
-            v = [self.lengths[i] * numpy.array(self.vertices[i])
-                 for i in triangle]
-            c = numpy.cross(v[0]-v[1], v[0]-v[2])
-            if numpy.vdot(c, v[2]) < 0:
-                c = -c
-            yield triangle, c / numpy.linalg.norm(c)
-
     def get_vertex(self, index):
         return self.vertices[index], self.lengths[index], self.colors[index]
 
     def set_vertex(self, index, length, color=None):
         self.lengths[index] = length
-        if color is not None:
+        if color is not None and self.colors is not None:
             self.colors[index] = color
-
 
 ####################################################################################################
 
@@ -72,18 +57,15 @@ class Structures:
             )
 
     @staticmethod
-    def sphere(n):
+    def sphere(n, radius=1.0):
         """Sphere generation function"""
 
-        icosahedron = Structures.icosahedron()
-        vertices = icosahedron.vertices
-        old_triangles = icosahedron.triangles
-        indices = {v: i for i, v in enumerate(vertices)}
+        def scaled(vector):
+            length = math.sqrt(sum(v*v for v in vector))
+            return tuple([radius * v / length for v in vector])
 
         def nm(v1, v2):
-            vector = [(v1[i] + v2[i])/2.0 for i in range(0, len(v1))]
-            length = math.sqrt(sum((v*v for v in vector)))
-            return tuple([v / length for v in vector])
+            return scaled([(v1[i] + v2[i])/2.0 for i in range(0, len(v1))])
 
         def index(v):
             if v not in indices:
@@ -91,6 +73,11 @@ class Structures:
                 vertices.append(v)
 
             return indices[v]
+
+        icosahedron = Structures.icosahedron()
+        vertices = [scaled(v) for v in icosahedron.vertices]
+        old_triangles = icosahedron.triangles
+        indices = {v: i for i, v in enumerate(vertices)}
 
         for i in range(0, n):
             new_triangles = set()
