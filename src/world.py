@@ -1,3 +1,4 @@
+import math
 import numpy
 import pyglet
 
@@ -6,18 +7,49 @@ from OpenGL.GL import *
 from . import geometry, graphics
 
 class World:
-    ZOOM_BOUNDS = (29.0, 121.0);
-    TILT_BOUNDS = (9.0, 81.0);
+    ZOOM_BOUNDS = (0.0, 1000.0)
+    TILT_BOUNDS = (0.0 * math.pi, 0.5 * math.pi)
 
-    def __init__(self, radius):
-        self.radius = radius
+    def __init__(self, state):
         self.width  = 600
         self.height = 400
-        self.bearing = 0.0
-        self.tilt = 40.0
-        self.zoom = 90.0
         self.highlight_point = None
+
+        self.radius = state.get_radius()
+        self.theta = 0.5 * math.pi
+        self.phi = 0.0 * math.pi
+        self.bearing = 0.0 * math.pi
+        self.tilt = 0.4 * math.pi
+        self.zoom = 10.0
+        self.elevation = state.elevation_function(self.theta, self.phi) - self.radius
+
         self.ready = False
+        self.state = state
+
+    def set_lookat(self, theta, phi):
+        self.theta = theta
+        self.phi = phi
+        self.elevation = self.state.elevation_function(theta, phi) - self.radius
+
+    def move(self, right_left, front_back):
+        # Calculate current heading
+        transformation = geometry.Matrices.personal_to_global(self.theta, self.phi, self.bearing)
+        forward = transformation @ numpy.array((0.0, 0.0, -1.0, 1.0)).reshape(4, 1)
+        toward = transformation @ numpy.array((right_left, 0.0, -front_back, 1.0)).reshape(4, 1)
+
+        # Update `theta` and `phi`
+        old = geometry.Coordinates.spherical_to_cartesian(self.radius, self.theta, self.phi)
+        *new, w = numpy.array((*old, 1.0)).reshape(4, 1) + toward
+        r, self.theta, self.phi = geometry.Coordinates.cartesian_to_spherical(*new)
+
+        # Update `elevation`
+        self.elevation = self.state.elevation_function(self.theta, self.phi) - self.radius
+
+        # Update `bearing`
+        new_forward = numpy.array((*new, 1.0)).reshape(4, 1) + forward
+        r, lat1, lon1 = geometry.Coordinates.cartesian_to_geographical_radians(*new)
+        r, lat2, lon2 = geometry.Coordinates.cartesian_to_geographical_radians(*new_forward[:3])
+        self.bearing = geometry.bearing_geographical(lat1, lon1, lat2, lon2)
 
     def zoom_by(self, zoom):
         new_zoom = self.zoom - zoom
@@ -27,6 +59,10 @@ class World:
 
     def rotate_by(self, angle):
         self.bearing += angle
+        while self.bearing > math.pi:
+            self.bearing -= 2 * math.pi
+        while self.bearing < -math.pi:
+            self.bearing += 2 * math.pi
 
     def tilt_by(self, angle):
         new_tilt = self.tilt + angle
@@ -110,17 +146,36 @@ class World:
             raise
 
     def _load_data(self):
-        figure = geometry.Structures.sphere(4, self.radius)
+        figure = geometry.Structures.sphere(5, self.radius)
+        self.water_renderer = graphics.SolidPolyhedronRenderer(figure)
+        figure.rescale(self.state.elevation_function)
         self.ground_renderer = graphics.SolidPolyhedronRenderer(figure)
 
-        self.renderers = (
-                graphics.PlainRenderer((0.0, 0.0, 100.0)),
-                graphics.PlainRenderer((1.0, 1.0, 100.0))
+        coordinates = (
+            (0.500 * math.pi, 0.000 * math.pi),
+            (0.499 * math.pi, 0.001 * math.pi),
+            (0.498 * math.pi, 0.002 * math.pi),
+        )
+
+        self.renderers = [graphics.PlainRenderer(
+            geometry.Coordinates.spherical_to_cartesian(
+                self.state.elevation_function(*coord), *coord
             )
+        ) for coord in coordinates]
 
         image = pyglet.image.load("images/grass.png")
         self.grass_tex = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.grass_tex)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, image.get_data()
+        )
+
+        image = pyglet.image.load("images/water.png")
+        self.water_tex = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.water_tex)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexImage2D(
@@ -139,42 +194,50 @@ class World:
         )
 
     def _refresh_projection(self):
-        self.projection = geometry.Matrices.projection(45, self.width, self.height, 0.1, 1000.0)
+        self.projection = \
+            geometry.Matrices.projection(0.25 * math.pi, self.width, self.height, 0.1, 1000.0)
 
     def _refresh_view(self):
-        self.view = geometry.Matrices.transposition([0.0, 0.0, -0.1 * self.zoom]) \
-                  * geometry.Matrices.rotation_x(-1.0 * self.tilt) \
-                  * geometry.Matrices.transposition([0.0, 0.0, -1.0 * self.radius]) \
-                  * geometry.Matrices.rotation_z(self.bearing)
+        self.view = geometry.Matrices.transposition([0.0, 0.0, -self.zoom]) \
+                  @ geometry.Matrices.rotation_x(-self.tilt) \
+                  @ geometry.Matrices.transposition([0.0, 0.0, -(self.radius + self.elevation)]) \
+                  @ geometry.Matrices.rotation_z(-self.bearing) \
+                  @ geometry.Matrices.rotation_x(self.theta) \
+                  @ geometry.Matrices.rotation_z(self.phi) \
+                  @ geometry.Matrices.rotation_x(-0.5 * math.pi)
 
-    def _draw (self):
+    def _draw(self):
         # Set up
         glViewport(0, 0, self.width, self.height)
         glClearColor(0.6, 0.6, 1.0, 1)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        # Draw ground
-        glClear(GL_DEPTH_BUFFER_BIT)
-        glBindTexture(GL_TEXTURE_2D, self.grass_tex)
-        glUseProgram(self.ground_program)
         self._refresh_projection()
         self._refresh_view()
+
+        # Draw ground
+        glClear(GL_DEPTH_BUFFER_BIT)
+        glUseProgram(self.ground_program)
         projection_location = glGetUniformLocation(self.ground_program, "uniProj")
         glUniformMatrix4fv(projection_location, 1, GL_TRUE, self.projection)
         view_location = glGetUniformLocation(self.ground_program, "uniView")
         glUniformMatrix4fv(view_location, 1, GL_TRUE, self.view)
 
+        glBindTexture(GL_TEXTURE_2D, self.water_tex)
+        self.water_renderer.render()
+
+        glBindTexture(GL_TEXTURE_2D, self.grass_tex)
         self.ground_renderer.render()
 
         # Find an entity with cursor focus
         index = None
         if self.highlight_point is not None:
-            mvp = self.projection * self.view
+            mvp = self.projection @ self.view
             offset1 = numpy.array((-0.5, 0.0, 0.0, 0.0)).reshape(4, 1)
             offset2 = numpy.array(( 0.5, 0.0, 1.0, 0.0)).reshape(4, 1)
             for i, renderer in enumerate(self.renderers):
                 anchor = numpy.array((*renderer.pos, 1.0)).reshape(4, 1)
-                vertex1, vertex2 = mvp * (anchor + offset1), mvp * (anchor + offset2)
+                vertex1, vertex2 = mvp @ (anchor + offset1), mvp @ (anchor + offset2)
                 vertex1, vertex2 = vertex1 / vertex1[3], vertex2 / vertex2[3]
                 left, bottom, right, top = vertex1[0], vertex1[1], vertex2[0], vertex2[1]
                 nx, ny = self.highlight_point[0], self.highlight_point[1]
@@ -185,15 +248,13 @@ class World:
         # Draw entities
         glBindTexture(GL_TEXTURE_2D, self.hero_tex)
         glUseProgram(self.entities_program)
-        self._refresh_projection()
-        self._refresh_view()
         projection_location = glGetUniformLocation(self.entities_program, "uniProj")
         glUniformMatrix4fv(projection_location, 1, GL_TRUE, self.projection)
         view_location = glGetUniformLocation(self.entities_program, "uniView")
         glUniformMatrix4fv(view_location, 1, GL_TRUE, self.view)
 
         for i, renderer in enumerate(self.renderers[::-1]):
-            glClear(GL_DEPTH_BUFFER_BIT)
+            #glClear(GL_DEPTH_BUFFER_BIT)
             highlight_location = glGetUniformLocation(self.entities_program, "uniHighlight")
             glUniform1i(highlight_location, int(i == index))
             renderer.render()

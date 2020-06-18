@@ -6,14 +6,13 @@ out highp vec4 outColor;
 uniform sampler2D sampler;
 
 void main(void) {
-    //outColor = vec4(shColor, 1.0);
-
-    highp float x;
-    highp float y;
-    if (shColor.x > shColor.y && shColor.x > shColor.z) {
+    highp float x = abs(shColor.x);
+    highp float y = abs(shColor.y);
+    highp float z = abs(shColor.z);
+    if (x > y && x > z) {
         x = shColor.z;
         y = shColor.y;
-    } else if (shColor.y > shColor.x && shColor.y > shColor.z) {
+    } else if (y > x && y > z) {
         x = shColor.x;
         y = shColor.z;
     } else {
@@ -21,5 +20,10 @@ void main(void) {
         y = shColor.y;
     }
 
-    outColor = texture(sampler, vec2(x - (x * floor(1.0 / x)), y - (y * floor(1.0 / y))));
+    outColor = texture(sampler, vec2(0.2 * x, 0.2 * y));
+
+    // Uncomment to see elevation
+    //highp float red = length(shColor) - 100.0;
+    //highp float green = 101.0 - length(shColor);
+    //outColor = vec4(red, green, 0.0, 1.0);
 }

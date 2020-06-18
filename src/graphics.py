@@ -50,9 +50,9 @@ class PlainRenderer:
         offset = 0.0
         vertices = numpy.array(
             [
-                 pos[0] + 0.5, pos[1], pos[2] + 0.0, 1.0, 1.0,
+                 pos[0] + 0.5, pos[1], pos[2] - 0.0, 1.0, 1.0,
                  pos[0] + 0.5, pos[1], pos[2] + 1.0, 1.0, 0.0,
-                 pos[0] - 0.5, pos[1], pos[2] + 0.0, 0.0, 1.0,
+                 pos[0] - 0.5, pos[1], pos[2] - 0.0, 0.0, 1.0,
                  pos[0] - 0.5, pos[1], pos[2] + 1.0, 0.0, 0.0
             ],
             dtype=numpy.float32

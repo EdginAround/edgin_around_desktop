@@ -9,5 +9,5 @@ out highp vec3 shColor;
 
 void main(void) {
     gl_Position = uniProj * uniView * vec4(inPosition, 1);
-    shColor = inPosition + vec3(100, 100, 100);
+    shColor = inPosition;
 }

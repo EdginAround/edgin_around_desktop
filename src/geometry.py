@@ -25,12 +25,13 @@ class Polyhedron:
             yield triangle
 
     def get_vertex(self, index):
-        return self.vertices[index], self.lengths[index], self.colors[index]
+        return self.vertices[index], self.colors[index]
 
-    def set_vertex(self, index, length, color=None):
-        self.lengths[index] = length
-        if color is not None and self.colors is not None:
-            self.colors[index] = color
+    def rescale(self, stretch):
+        for i, vertex in enumerate(self.vertices):
+            r, theta, phi = Coordinates.cartesian_to_spherical(*vertex)
+            multiplier = stretch(theta, phi) / r
+            self.vertices[i] = [v * multiplier for v in vertex]
 
 ####################################################################################################
 
@@ -107,11 +108,11 @@ class Matrices:
 
     @staticmethod
     def projection(fovy, width, height, near, far):
-        s = 1.0 / math.tan(math.radians(fovy) / 2.0)
+        s = 1.0 / math.tan(0.5 * fovy)
         sx, sy = s * height / width, s
         zz = (far + near) / (near - far)
         zw = 2 * far * near / (near - far)
-        return numpy.matrix([
+        return numpy.array([
             [sx,  0,  0,  0],
             [ 0, sy,  0,  0],
             [ 0,  0, zz, zw],
@@ -121,7 +122,7 @@ class Matrices:
     @staticmethod
     def transposition(transposition):
         x, y, z = transposition[0], transposition[1], transposition[2]
-        return numpy.matrix([
+        return numpy.array([
             [1, 0, 0, x],
             [0, 1, 0, y],
             [0, 0, 1, z],
@@ -130,9 +131,8 @@ class Matrices:
 
     @staticmethod
     def rotation_x(a):
-        a = math.radians(a)
         c, s = math.cos(a), math.sin(a)
-        return numpy.matrix([
+        return numpy.array([
             [1.0, 0.0, 0.0, 0.0],
             [0.0,   c,  -s, 0.0],
             [0.0,   s,   c, 0.0],
@@ -141,9 +141,8 @@ class Matrices:
 
     @staticmethod
     def rotation_y(a):
-        a = math.radians(a)
         c, s = math.cos(a), math.sin(a)
-        return numpy.matrix([
+        return numpy.array([
             [  c, 0.0,   s, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [ -s, 0.0,   c, 0.0],
@@ -152,12 +151,70 @@ class Matrices:
 
     @staticmethod
     def rotation_z(a):
-        a = math.radians(a)
         c, s = math.cos(a), math.sin(a)
-        return numpy.matrix([
+        return numpy.array([
             [  c,  -s, 0.0, 0.0],
             [  s,   c, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ], dtype = numpy.float32)
+
+    @staticmethod
+    def personal_to_global(theta, phi, bearing):
+        return Matrices.rotation_y(phi) \
+             @ Matrices.rotation_x(theta) \
+             @ Matrices.rotation_y(-bearing)
+
+####################################################################################################
+
+class Coordinates:
+    @staticmethod
+    def cartesian_to_spherical(x, y, z):
+        r = math.sqrt(x * x + y * y + z * z)
+        theta = math.atan2(math.sqrt(x * x + z * z), y) if y != 0.0 else 0.5 * math.pi
+        phi = math.atan2(x, z) if z != 0.0 else 0.5 * math.pi
+        return r, theta, phi
+
+    @staticmethod
+    def cartesian_to_geographical_radians(x, y, z):
+        coords = Coordinates.cartesian_to_spherical(x, y, z)
+        return Coordinates.spherical_to_geographical_radians(*coords)
+
+    @staticmethod
+    def cartesian_to_geographical_degrees(x, y, z):
+        coords = Coordinates.cartesian_to_spherical(x, y, z)
+        return Coordinates.spherical_to_geographical_degrees(*coords)
+
+    @staticmethod
+    def spherical_to_cartesian(r, theta, phi):
+        z = r * math.sin(theta) * math.cos(phi)
+        x = r * math.sin(theta) * math.sin(phi)
+        y = r * math.cos(theta)
+        return x, y, z
+
+    def spherical_to_geographical_radians(r, theta, phi):
+        latitude = 0.5 * math.pi - theta
+        longitude = phi if phi <= math.pi else phi - 2.0 * math.pi
+        return r, latitude, longitude
+
+    def spherical_to_geographical_degrees(r, theta, phi):
+        r, latitude, longitude = Coordinates.spherical_to_geographical_radians(r, theta, phi)
+        return r, math.degrees(latitude), math.degrees(longitude)
+
+####################################################################################################
+
+def bearing_geographical(lat1, lon1, lat2, lon2):
+    """Calculates bearing between two points expressed in geographical coordinates."""
+
+    return math.atan2(
+        math.sin(lon2 - lon1) * math.cos(lat2),
+        math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(lon2 - lon1)
+    )
+
+def bearing_spherical(theta1, phi1, theta2, phi2):
+    """Calculates bearing between two points expressed in spherical coordinates."""
+
+    r, lat1, lon1 = Coordinates.spherical_to_geographical_radians(1.0, theta1, phi1)
+    r, lat2, lon2 = Coordinates.spherical_to_geographical_radians(1.0, theta2, phi2)
+    return bearing_geographical(lat1, lon1, lat2, lon2)
 

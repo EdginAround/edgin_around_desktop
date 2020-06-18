@@ -1,13 +1,14 @@
 import pyglet
 
-from . import controls, world
+from . import controls, world, world_state
 
 class Window(pyglet.window.Window):
     def __init__(self):
         super(Window, self).__init__(resizable=True)
         self.maximize()
 
-        self.world = world.World(100)
+        state = world_state.WorldGenerator().generate(100.0)
+        self.world = world.World(state)
         self.controls = controls.Controls(self.world)
 
     def on_resize(self, width, height):
