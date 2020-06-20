@@ -163,7 +163,7 @@ class World:
             )
         ) for coord in coordinates]
 
-        image = pyglet.image.load("images/grass.png")
+        image = pyglet.image.load("res/images/grass.png")
         self.grass_tex = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.grass_tex)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -173,7 +173,7 @@ class World:
             GL_RGBA, GL_UNSIGNED_BYTE, image.get_data()
         )
 
-        image = pyglet.image.load("images/water.png")
+        image = pyglet.image.load("res/images/water.png")
         self.water_tex = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.water_tex)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -183,7 +183,7 @@ class World:
             GL_RGBA, GL_UNSIGNED_BYTE, image.get_data()
         )
 
-        image = pyglet.image.load("images/hero.png")
+        image = pyglet.image.load("res/images/hero.png")
         self.hero_tex = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.hero_tex)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)

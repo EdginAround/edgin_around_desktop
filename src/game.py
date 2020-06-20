@@ -15,7 +15,10 @@ class Window(pyglet.window.Window):
         self.world.resize(width, height)
 
     def on_draw(self):
+        pending_actions = self.controls.on_draw()
         self.world.draw()
+        if pending_actions:
+            self.schedule_redraw()
 
     def on_key_press(self, symbol, modifiers):
         self.controls.handle_key_press(symbol, modifiers)
@@ -25,6 +28,10 @@ class Window(pyglet.window.Window):
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.world.highlight(x, y)
+
+    def schedule_redraw(self):
+        noop = lambda *args, **kwargs: None
+        pyglet.clock.schedule_once(noop, 0.0)
 
 class Game:
     def run(self):
