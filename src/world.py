@@ -130,134 +130,120 @@ class World:
         glDepthFunc(GL_LESS)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        self.ground_program = self._load_program('ground_vertex', 'ground_fragment')
-        self.entities_program = self._load_program('entities_vertex', 'entities_fragment')
+        self.program_ground = self._load_program('ground_vertex', 'ground_fragment')
+        self.program_entities = self._load_program('entities_vertex', 'entities_fragment')
 
         try:
-            glUseProgram(self.ground_program)
+            glUseProgram(self.program_ground)
+            self.loc_ground_proj = glGetUniformLocation(self.program_ground, "uniProj")
+            self.loc_ground_view = glGetUniformLocation(self.program_ground, "uniView")
         except OpenGL.error.GLError:
-            print(glGetProgramInfoLog(self.ground_program))
+            print(glGetProgramInfoLog(self.program_ground))
             raise
 
         try:
-            glUseProgram(self.entities_program)
+            glUseProgram(self.program_entities)
+            self.loc_entities_proj = glGetUniformLocation(self.program_entities, "uniProj")
+            self.loc_entities_view = glGetUniformLocation(self.program_entities, "uniView")
+            self.loc_entities_high = glGetUniformLocation(self.program_entities, "uniHighlight")
         except OpenGL.error.GLError:
-            print(glGetProgramInfoLog(self.entities_program))
+            print(glGetProgramInfoLog(self.program_entities))
             raise
+
+    def _load_texture(self, image_path):
+        image = pyglet.image.load(image_path)
+        texture = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, texture)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, image.get_data()
+        )
+        return texture
 
     def _load_data(self):
-        figure = geometry.Structures.sphere(5, self.radius)
-        self.water_renderer = graphics.SolidPolyhedronRenderer(figure)
-        figure.rescale(self.state.elevation_function)
-        self.ground_renderer = graphics.SolidPolyhedronRenderer(figure)
+        self.tex_grass = self._load_texture("res/images/grass.png")
+        self.tex_water = self._load_texture("res/images/water.png")
+        self.tex_hero = self._load_texture("res/images/hero.png")
 
-        coordinates = (
-            (0.500 * math.pi, 0.000 * math.pi),
+        figure = geometry.Structures.sphere(5, self.radius)
+        self.renderer_water = graphics.SolidPolyhedronRenderer(figure, self.tex_water)
+        figure.rescale(self.state.elevation_function)
+        self.renderer_ground = graphics.SolidPolyhedronRenderer(figure, self.tex_grass)
+
+        self.renderer_hero = graphics.PlainRenderer(
+                self.radius + self.elevation,
+                self.theta, self.phi, self.bearing,
+                self.tex_hero
+            )
+
+        self.renderers_entities = [graphics.PlainRenderer(
+            self.state.elevation_function(self.theta, self.phi),
+            *coord, self.bearing, self.tex_hero
+        ) for coord in (
             (0.499 * math.pi, 0.001 * math.pi),
             (0.498 * math.pi, 0.002 * math.pi),
-        )
-
-        self.renderers = [graphics.PlainRenderer(
-            geometry.Coordinates.spherical_to_cartesian(
-                self.state.elevation_function(*coord), *coord
-            )
-        ) for coord in coordinates]
-
-        image = pyglet.image.load("res/images/grass.png")
-        self.grass_tex = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.grass_tex)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, image.get_data()
-        )
-
-        image = pyglet.image.load("res/images/water.png")
-        self.water_tex = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.water_tex)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, image.get_data()
-        )
-
-        image = pyglet.image.load("res/images/hero.png")
-        self.hero_tex = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.hero_tex)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, image.get_data()
-        )
+        )]
 
     def _refresh_projection(self):
         self.projection = \
             geometry.Matrices.projection(0.25 * math.pi, self.width, self.height, 0.1, 1000.0)
 
     def _refresh_view(self):
-        self.view = geometry.Matrices.transposition([0.0, 0.0, -self.zoom]) \
+        self.view = geometry.Matrices.translation([0.0, 0.0, -self.zoom]) \
                   @ geometry.Matrices.rotation_x(-self.tilt) \
-                  @ geometry.Matrices.transposition([0.0, 0.0, -(self.radius + self.elevation)]) \
-                  @ geometry.Matrices.rotation_z(-self.bearing) \
-                  @ geometry.Matrices.rotation_x(self.theta) \
-                  @ geometry.Matrices.rotation_z(self.phi) \
-                  @ geometry.Matrices.rotation_x(-0.5 * math.pi)
+                  @ geometry.Matrices.translation([0.0, 0.0, -(self.radius + self.elevation)]) \
+                  @ geometry.Matrices.rotation_z(self.bearing) \
+                  @ geometry.Matrices.rotation_x(-self.theta) \
+                  @ geometry.Matrices.rotation_z(-self.phi) \
+                  @ geometry.Matrices.rotation_x(0.5 * math.pi)
 
     def _draw(self):
         # Set up
         glViewport(0, 0, self.width, self.height)
         glClearColor(0.6, 0.6, 1.0, 1)
-        glClear(GL_COLOR_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self._refresh_projection()
         self._refresh_view()
 
         # Draw ground
-        glClear(GL_DEPTH_BUFFER_BIT)
-        glUseProgram(self.ground_program)
-        projection_location = glGetUniformLocation(self.ground_program, "uniProj")
-        glUniformMatrix4fv(projection_location, 1, GL_TRUE, self.projection)
-        view_location = glGetUniformLocation(self.ground_program, "uniView")
-        glUniformMatrix4fv(view_location, 1, GL_TRUE, self.view)
+        glUseProgram(self.program_ground)
+        glUniformMatrix4fv(self.loc_ground_proj, 1, GL_TRUE, self.projection)
+        glUniformMatrix4fv(self.loc_ground_view, 1, GL_TRUE, self.view)
 
-        glBindTexture(GL_TEXTURE_2D, self.water_tex)
-        self.water_renderer.render()
+        self.renderer_water.render()
+        self.renderer_ground.render()
 
-        glBindTexture(GL_TEXTURE_2D, self.grass_tex)
-        self.ground_renderer.render()
+        # Update entities with bearing and sort them by distance from the camera
+        mvp = self.projection @ self.view
+        for renderer in self.renderers_entities:
+            renderer.change_bearing(self.bearing)
+            renderer.calculate_screen_bounds(mvp)
+        self.renderers_entities.sort(key=graphics.PlainRenderer.get_camera_distance)
 
         # Find an entity with cursor focus
-        index = None
-        if self.highlight_point is not None:
-            mvp = self.projection @ self.view
-            offset1 = numpy.array((-0.5, 0.0, 0.0, 0.0)).reshape(4, 1)
-            offset2 = numpy.array(( 0.5, 0.0, 1.0, 0.0)).reshape(4, 1)
-            for i, renderer in enumerate(self.renderers):
-                anchor = numpy.array((*renderer.pos, 1.0)).reshape(4, 1)
-                vertex1, vertex2 = mvp @ (anchor + offset1), mvp @ (anchor + offset2)
-                vertex1, vertex2 = vertex1 / vertex1[3], vertex2 / vertex2[3]
-                left, bottom, right, top = vertex1[0], vertex1[1], vertex2[0], vertex2[1]
-                nx, ny = self.highlight_point[0], self.highlight_point[1]
-                if left < nx and nx < right and bottom < ny and ny < top:
-                    index = len(self.renderers) - i - 1
-                    break
+        highlighted = False
+        for renderer in self.renderers_entities:
+            highlight = False
+            if self.highlight_point is not None and not highlighted:
+                highlight = renderer.get_boundary().contains(*self.highlight_point)
+                highlighted = highlighted or highlight
+            renderer.set_highlight(highlight)
 
         # Draw entities
-        glBindTexture(GL_TEXTURE_2D, self.hero_tex)
-        glUseProgram(self.entities_program)
-        projection_location = glGetUniformLocation(self.entities_program, "uniProj")
-        glUniformMatrix4fv(projection_location, 1, GL_TRUE, self.projection)
-        view_location = glGetUniformLocation(self.entities_program, "uniView")
-        glUniformMatrix4fv(view_location, 1, GL_TRUE, self.view)
+        glUseProgram(self.program_entities)
+        glUniformMatrix4fv(self.loc_entities_proj, 1, GL_TRUE, self.projection)
+        glUniformMatrix4fv(self.loc_entities_view, 1, GL_TRUE, self.view)
 
-        for i, renderer in enumerate(self.renderers[::-1]):
-            #glClear(GL_DEPTH_BUFFER_BIT)
-            highlight_location = glGetUniformLocation(self.entities_program, "uniHighlight")
-            glUniform1i(highlight_location, int(i == index))
-            renderer.render()
+        for renderer in self.renderers_entities[::-1]:
+            renderer.render(self.loc_entities_high)
+
+        glUniform1i(self.loc_entities_high, False)
+        self.renderer_hero \
+            .change_position(self.radius + self.elevation, self.theta, self.phi, self.bearing)
+        self.renderer_hero.render(self.loc_entities_high)
 
         # Clean up
         glUseProgram(0)

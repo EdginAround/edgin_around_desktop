@@ -120,8 +120,8 @@ class Matrices:
         ], dtype = numpy.float32)
 
     @staticmethod
-    def transposition(transposition):
-        x, y, z = transposition[0], transposition[1], transposition[2]
+    def translation(vector):
+        x, y, z = vector[0], vector[1], vector[2]
         return numpy.array([
             [1, 0, 0, x],
             [0, 1, 0, y],
@@ -217,4 +217,16 @@ def bearing_spherical(theta1, phi1, theta2, phi2):
     r, lat1, lon1 = Coordinates.spherical_to_geographical_radians(1.0, theta1, phi1)
     r, lat2, lon2 = Coordinates.spherical_to_geographical_radians(1.0, theta2, phi2)
     return bearing_geographical(lat1, lon1, lat2, lon2)
+
+####################################################################################################
+
+class Boundary2D:
+    def __init__(self, left, bottom, right, top):
+        self.left = left
+        self.bottom = bottom
+        self.right = right
+        self.top = top
+
+    def contains(self, x, y):
+        return self.left < x and x < self.right and self.bottom < y and y < self.top
 

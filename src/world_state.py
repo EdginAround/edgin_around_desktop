@@ -33,7 +33,7 @@ class WorldGenerator:
         def hills(theta, phi):
             return 0.003 * radius \
                 * (theta / math.pi - 1) * math.sin(50 * phi) \
-                * (theta / math.pi - 2) * math.sin(50 * phi)
+                * (theta / math.pi - 2) * math.sin(50 * theta)
 
         def ranges(theta, phi):
             return 0.006 * radius * math.cos(10 * theta + math.pi) * math.cos(10 * phi)

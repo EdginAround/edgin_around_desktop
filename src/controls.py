@@ -26,14 +26,14 @@ class Controls:
         self.repeatable_actions = {
                 (key.A, NOMODS): lambda intv: world.move(-pi * intv, 0.0),
                 (key.D, NOMODS): lambda intv: world.move(pi * intv, 0.0),
-                (key.E, NOMODS): lambda intv: world.rotate_by(-0.5 * pi * intv),
-                (key.Q, NOMODS): lambda intv: world.rotate_by(0.5 * pi * intv),
-                (key.S, NOMODS): lambda intv: world.move(0.0, pi * intv),
-                (key.W, NOMODS): lambda intv: world.move(0.0, -pi * intv),
+                (key.E, NOMODS): lambda intv: world.rotate_by(0.5 * pi * intv),
+                (key.Q, NOMODS): lambda intv: world.rotate_by(-0.5 * pi * intv),
+                (key.S, NOMODS): lambda intv: world.move(0.0, -pi * intv),
+                (key.W, NOMODS): lambda intv: world.move(0.0, pi * intv),
                 (key.LEFT, NOMODS): lambda intv: world.move(-pi * intv, 0.0),
                 (key.RIGHT, NOMODS): lambda intv: world.move(pi * intv, 0.0),
-                (key.UP, NOMODS): lambda intv: world.move(0.0, -pi * intv),
-                (key.DOWN, NOMODS): lambda intv: world.move(0.0, pi * intv),
+                (key.UP, NOMODS): lambda intv: world.move(0.0, pi * intv),
+                (key.DOWN, NOMODS): lambda intv: world.move(0.0, -pi * intv),
             }
 
         self.active_actions = {}
