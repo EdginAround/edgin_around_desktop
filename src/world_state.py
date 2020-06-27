@@ -1,50 +1,48 @@
 import math
 
-class ElevationFunction:
-    def __init__(self, radius):
-        self.radius = radius
-        self.functions = list()
+from typing import List
 
-    def add(self, function):
-        self.functions.append(function)
-
-    def evaluate(self, theta, phi):
-        return self.radius + sum(f(theta, phi) for f in self.functions)
-
-    def __call__(self, latitude, longitude):
-        return self.evaluate(latitude, longitude)
+from . import entity, geometry
 
 
 class WorldState:
-    def __init__(self, radius, elevation_function):
-        self.radius = radius
+    def __init__(self, elevation_function, entities: List[entity.Entity]) -> None:
         self.elevation_function = elevation_function
+        self.entities = entities
 
-    def get_radius(self):
-        return self.radius
+    def get_performers(self):
+        return [e for e in self.entities if e.features.performer is not None]
 
 
 class WorldGenerator:
-    def generate_empty(self, radius):
-        elevation_function = ElevationFunction(radius)
-        return WorldState(radius, elevation_function)
+    def generate_basic(self, radius) -> WorldState:
+        elevation_function = geometry.ElevationFunction(radius)
+        entities: List[entity.Entity] = list()
+        return WorldState(elevation_function, entities)
 
-    def generate(self, radius):
-        def hills(theta, phi):
+    def generate(self, radius) -> WorldState:
+        # Elevation
+        def hills(theta, phi) -> float:
             return 0.003 * radius \
                 * (theta / math.pi - 1) * math.sin(50 * phi) \
                 * (theta / math.pi - 2) * math.sin(50 * theta)
 
-        def ranges(theta, phi):
+        def ranges(theta, phi) -> float:
             return 0.006 * radius * math.cos(10 * theta + math.pi) * math.cos(10 * phi)
 
-        def continents(theta, phi):
+        def continents(theta, phi) -> float:
             return 0.009 * radius * math.sin(theta) * math.sin(phi)
 
-        elevation_function = ElevationFunction(radius)
+        elevation_function = geometry.ElevationFunction(radius)
         elevation_function.add(hills)
         elevation_function.add(ranges)
         elevation_function.add(continents)
 
-        return WorldState(radius, elevation_function)
+        # Entities
+        entities: List[entity.Entity] = [
+            entity.Warior(2, (0.499 * math.pi, 0.001 * math.pi)),
+            entity.Warior(3, (0.498 * math.pi, 0.002 * math.pi)),
+        ]
+
+        return WorldState(elevation_function, entities)
 

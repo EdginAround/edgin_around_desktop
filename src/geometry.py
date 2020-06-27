@@ -1,5 +1,6 @@
-import math
 import numpy
+
+from math import asin, atan2, cos, degrees, pi, radians, sin, sqrt, tan
 
 ####################################################################################################
 
@@ -42,8 +43,8 @@ class Structures:
     def icosahedron():
         """Icosahedron generation function"""
 
-        f = (math.sqrt(5.0) + 1.0) / 2.0
-        b = math.sqrt(2.0 / (5.0 + math.sqrt(5.0)))
+        f = (sqrt(5.0) + 1.0) / 2.0
+        b = sqrt(2.0 / (5.0 + sqrt(5.0)))
         a = b * f
 
         return Polyhedron(
@@ -62,11 +63,11 @@ class Structures:
         """Sphere generation function"""
 
         def scaled(vector):
-            length = math.sqrt(sum(v*v for v in vector))
-            return tuple([radius * v / length for v in vector])
+            length_inv = 1.0 / sqrt(sum(v*v for v in vector))
+            return tuple([radius * v * length_inv for v in vector])
 
         def nm(v1, v2):
-            return scaled([(v1[i] + v2[i])/2.0 for i in range(0, len(v1))])
+            return scaled([0.5 * (v1[i] + v2[i]) for i in range(0, len(v1))])
 
         def index(v):
             if v not in indices:
@@ -108,7 +109,7 @@ class Matrices:
 
     @staticmethod
     def projection(fovy, width, height, near, far):
-        s = 1.0 / math.tan(0.5 * fovy)
+        s = 1.0 / tan(0.5 * fovy)
         sx, sy = s * height / width, s
         zz = (far + near) / (near - far)
         zw = 2 * far * near / (near - far)
@@ -131,7 +132,7 @@ class Matrices:
 
     @staticmethod
     def rotation_x(a):
-        c, s = math.cos(a), math.sin(a)
+        c, s = cos(a), sin(a)
         return numpy.array([
             [1.0, 0.0, 0.0, 0.0],
             [0.0,   c,  -s, 0.0],
@@ -141,7 +142,7 @@ class Matrices:
 
     @staticmethod
     def rotation_y(a):
-        c, s = math.cos(a), math.sin(a)
+        c, s = cos(a), sin(a)
         return numpy.array([
             [  c, 0.0,   s, 0.0],
             [0.0, 1.0, 0.0, 0.0],
@@ -151,7 +152,7 @@ class Matrices:
 
     @staticmethod
     def rotation_z(a):
-        c, s = math.cos(a), math.sin(a)
+        c, s = cos(a), sin(a)
         return numpy.array([
             [  c,  -s, 0.0, 0.0],
             [  s,   c, 0.0, 0.0],
@@ -170,9 +171,9 @@ class Matrices:
 class Coordinates:
     @staticmethod
     def cartesian_to_spherical(x, y, z):
-        r = math.sqrt(x * x + y * y + z * z)
-        theta = math.atan2(math.sqrt(x * x + z * z), y) if y != 0.0 else 0.5 * math.pi
-        phi = math.atan2(x, z) if z != 0.0 else 0.5 * math.pi
+        r = sqrt(x * x + y * y + z * z)
+        theta = atan2(sqrt(x * x + z * z), y) if y != 0.0 else 0.5 * pi
+        phi = atan2(x, z) if z != 0.0 else 0.5 * pi
         return r, theta, phi
 
     @staticmethod
@@ -187,36 +188,93 @@ class Coordinates:
 
     @staticmethod
     def spherical_to_cartesian(r, theta, phi):
-        z = r * math.sin(theta) * math.cos(phi)
-        x = r * math.sin(theta) * math.sin(phi)
-        y = r * math.cos(theta)
+        z = r * sin(theta) * cos(phi)
+        x = r * sin(theta) * sin(phi)
+        y = r * cos(theta)
         return x, y, z
 
+    @staticmethod
     def spherical_to_geographical_radians(r, theta, phi):
-        latitude = 0.5 * math.pi - theta
-        longitude = phi if phi <= math.pi else phi - 2.0 * math.pi
-        return r, latitude, longitude
+        lat = 0.5 * pi - theta
+        lon = phi if phi <= pi else phi - 2.0 * pi
+        return r, lat, lon
 
+    @staticmethod
     def spherical_to_geographical_degrees(r, theta, phi):
-        r, latitude, longitude = Coordinates.spherical_to_geographical_radians(r, theta, phi)
-        return r, math.degrees(latitude), math.degrees(longitude)
+        r, lat, lon = Coordinates.spherical_to_geographical_radians(r, theta, phi)
+        return r, degrees(lat), degrees(lon)
+
+    @staticmethod
+    def geographical_radians_to_spherical(r, lat, lon):
+        theta = 0.5 * pi - lat
+        phi = lon if lon >= 0 else lon + 2.0 * pi
+        return r, theta, phi
+
+    @staticmethod
+    def geographical_degrees_to_spherical(r, lat, lon):
+        return Coordinates.geographical_radians_to_spherical(r, radians(lat), radians(lon))
 
 ####################################################################################################
 
-def bearing_geographical(lat1, lon1, lat2, lon2):
-    """Calculates bearing between two points expressed in geographical coordinates."""
+class Coordinate:
+    """Position expressed in geographical coordinates with degrees."""
 
-    return math.atan2(
-        math.sin(lon2 - lon1) * math.cos(lat2),
-        math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(lon2 - lon1)
-    )
+    def __init__(self, lat, lon) -> None:
+        self.lat = lat
+        self.lon = lon
 
-def bearing_spherical(theta1, phi1, theta2, phi2):
-    """Calculates bearing between two points expressed in spherical coordinates."""
+    def bearing_to(self, other: 'Coordinate') -> float:
+        """Calculates bearing between two coordinates."""
 
-    r, lat1, lon1 = Coordinates.spherical_to_geographical_radians(1.0, theta1, phi1)
-    r, lat2, lon2 = Coordinates.spherical_to_geographical_radians(1.0, theta2, phi2)
-    return bearing_geographical(lat1, lon1, lat2, lon2)
+        x = sin(other.lon - self.lon) * cos(other.lat)
+        y = cos(self.lat) * sin(other.lat) - \
+            sin(self.lat) * cos(other.lat) * cos(other.lon - self.lon)
+
+        return atan2(x, y)
+
+    def moved_by(self, distance, bearing, radius) -> 'Coordinate':
+        angular_distance = distance / radius
+        cad = cos(angular_distance)
+        sad = sin(angular_distance)
+
+        cb = cos(bearing)
+        sb = sin(bearing)
+
+        slat1 = sin(self.lat)
+        clat1 = cos(self.lat)
+
+        lat2 = asin(slat1 * cad + clat1 * sad * cb)
+        slat2 = sin(lat2)
+        lon2 = self.lon + atan2(sb * sad * clat1, cad - slat1 * slat2)
+
+        return Coordinate(lat2, lon2)
+
+    def to_point(self) -> 'Point':
+        r, theta, phi = Coordinates.geographical_radians_to_spherical(1.0, self.lat, self.lon)
+        return Point(theta, phi)
+
+####################################################################################################
+
+class Point:
+    """Position expressed in spherical coordinates."""
+
+    def __init__(self, theta, phi) -> None:
+        self.theta = theta
+        self.phi = phi
+
+    def bearing_to(self, other: 'Point') -> float:
+        """Calculates bearing between two points expressed in spherical coordinates."""
+
+        coord1 = self.to_coordinate()
+        coord2 = other.to_coordinate()
+        return coord1.bearing_to(coord2)
+
+    def moved_by(self, distance, bearing, radius) -> 'Point':
+        return self.to_coordinate().moved_by(distance, bearing, radius).to_point()
+
+    def to_coordinate(self) -> Coordinate:
+        r, lat, lon = Coordinates.spherical_to_geographical_radians(1.0, self.theta, self.phi)
+        return Coordinate(lat, lon)
 
 ####################################################################################################
 
@@ -229,4 +287,27 @@ class Boundary2D:
 
     def contains(self, x, y):
         return self.left < x and x < self.right and self.bottom < y and y < self.top
+
+####################################################################################################
+
+class ElevationFunction:
+    def __init__(self, radius):
+        self.radius = radius
+        self.functions = list()
+
+    def add(self, function):
+        self.functions.append(function)
+
+    def get_radius(self) -> float:
+        return self.radius
+
+    def evaluate_without_radius(self, theta, phi):
+        return sum(f(theta, phi) for f in self.functions)
+
+    def evaluate_with_radius(self, theta, phi):
+        return self.radius + self.evaluate_without_radius(theta, phi)
+
+    def __call__(self, lat, lon):
+        return self.evaluate_with_radius(lat, lon)
+
 

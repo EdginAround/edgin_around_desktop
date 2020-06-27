@@ -43,7 +43,7 @@ class GeometryTest(unittest.TestCase):
             self.assert_tuples_almost_equal(expected, computed)
 
     def test_spherical_to_geographical_degrees(self):
-        for spherical, expected in (
+        for spherical, geographical in (
             ((1.0, 0.00 * pi, 0.0 * pi), (1.0,  90.0,    0.0)),
             ((1.0, 0.25 * pi, 0.5 * pi), (1.0,  45.0,   90.0)),
             ((1.0, 0.50 * pi, 1.0 * pi), (1.0,   0.0,  180.0)),
@@ -51,7 +51,18 @@ class GeometryTest(unittest.TestCase):
             ((1.0, 1.00 * pi, 2.0 * pi), (1.0, -90.0,    0.0)),
         ):
             computed = geometry.Coordinates.spherical_to_geographical_degrees(*spherical)
-            self.assert_tuples_almost_equal(expected, computed)
+            self.assert_tuples_almost_equal(geographical, computed)
+
+    def test_geographical_degrees_spherical(self):
+        for geographical, spherical in (
+            ((1.0,  90.0,    0.0), (1.0, 0.00 * pi, 0.0 * pi)),
+            ((1.0,  45.0,   90.0), (1.0, 0.25 * pi, 0.5 * pi)),
+            ((1.0,   0.0,  180.0), (1.0, 0.50 * pi, 1.0 * pi)),
+            ((1.0, -45.0,  -90.0), (1.0, 0.75 * pi, 1.5 * pi)),
+            ((1.0, -90.0,    0.0), (1.0, 1.00 * pi, 0.0 * pi)),
+        ):
+            computed = geometry.Coordinates.geographical_degrees_to_spherical(*geographical)
+            self.assert_tuples_almost_equal(spherical, computed)
 
     def test_bearing(self):
         for p1, p2, expected1, expected2 in (
@@ -64,8 +75,10 @@ class GeometryTest(unittest.TestCase):
             ((0.5 * pi, 0.0 * pi), (0.50 * pi, -0.5 * pi), -0.50 * pi,  0.50 * pi),
             ((0.5 * pi, 0.0 * pi), (0.25 * pi, -0.5 * pi), -0.25 * pi,  0.50 * pi),
         ):
-            computed1 = geometry.bearing_spherical(*p1, *p2)
-            computed2 = geometry.bearing_spherical(*p2, *p1)
+            p1 = geometry.Point(*p1)
+            p2 = geometry.Point(*p2)
+            computed1 = p1.bearing_to(p2)
+            computed2 = p2.bearing_to(p1)
             self.assertAlmostEqual(expected1, computed1)
             self.assertAlmostEqual(expected2, computed2)
 

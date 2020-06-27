@@ -2,36 +2,39 @@ import math
 import numpy
 import pyglet
 
-from OpenGL.GL import *
+from OpenGL import GL
 
-from . import geometry, graphics
+from typing import Optional, Tuple
+
+from . import geometry, graphics, media, scene
 
 class World:
     ZOOM_BOUNDS = (0.0, 1000.0)
     TILT_BOUNDS = (0.0 * math.pi, 0.5 * math.pi)
 
-    def __init__(self, state):
+    def __init__(self, scene: scene.Scene) -> None:
         self.width  = 600
         self.height = 400
-        self.highlight_point = None
+        self.highlight_point: Optional[Tuple[float, float]] = None
 
-        self.radius = state.get_radius()
+        self.radius = scene.get_radius()
         self.theta = 0.5 * math.pi
         self.phi = 0.0 * math.pi
         self.bearing = 0.0 * math.pi
         self.tilt = 0.4 * math.pi
         self.zoom = 10.0
-        self.elevation = state.elevation_function(self.theta, self.phi) - self.radius
+        self.elevation = 0.0
 
         self.ready = False
-        self.state = state
+        self.scene = scene
+        self.media = media.Media()
 
-    def set_lookat(self, theta, phi):
+    def set_lookat(self, theta, phi) -> None:
         self.theta = theta
         self.phi = phi
-        self.elevation = self.state.elevation_function(theta, phi) - self.radius
+        self.elevation = self.scene.get_elevation(theta, phi)
 
-    def move(self, right_left, front_back):
+    def move(self, right_left, front_back) -> None:
         # Calculate current heading
         transformation = geometry.Matrices.personal_to_global(self.theta, self.phi, self.bearing)
         forward = transformation @ numpy.array((0.0, 0.0, -1.0, 1.0)).reshape(4, 1)
@@ -43,46 +46,48 @@ class World:
         r, self.theta, self.phi = geometry.Coordinates.cartesian_to_spherical(*new)
 
         # Update `elevation`
-        self.elevation = self.state.elevation_function(self.theta, self.phi) - self.radius
+        self.elevation = self.scene.get_elevation(self.theta, self.phi)
 
         # Update `bearing`
         new_forward = numpy.array((*new, 1.0)).reshape(4, 1) + forward
         r, lat1, lon1 = geometry.Coordinates.cartesian_to_geographical_radians(*new)
         r, lat2, lon2 = geometry.Coordinates.cartesian_to_geographical_radians(*new_forward[:3])
-        self.bearing = geometry.bearing_geographical(lat1, lon1, lat2, lon2)
+        coord1 = geometry.Coordinate(lat1, lon1)
+        coord2 = geometry.Coordinate(lat2, lon2)
+        self.bearing = coord1.bearing_to(coord2)
 
-    def zoom_by(self, zoom):
+    def zoom_by(self, zoom) -> None:
         new_zoom = self.zoom - zoom
 
         if World.ZOOM_BOUNDS[0] < new_zoom and new_zoom < World.ZOOM_BOUNDS[1]:
             self.zoom = new_zoom
 
-    def rotate_by(self, angle):
+    def rotate_by(self, angle) -> None:
         self.bearing += angle
         while self.bearing > math.pi:
             self.bearing -= 2 * math.pi
         while self.bearing < -math.pi:
             self.bearing += 2 * math.pi
 
-    def tilt_by(self, angle):
+    def tilt_by(self, angle) -> None:
         new_tilt = self.tilt + angle
 
         if World.TILT_BOUNDS[0] < new_tilt and new_tilt < World.TILT_BOUNDS[1]:
             self.tilt = new_tilt
 
-    def resize(self, width, height):
+    def resize(self, width, height) -> None:
         print("Window size: ({}, {})".format(width, height))
         self.width = width
         self.height = height
 
-    def highlight(self, x, y):
+    def highlight(self, x, y) -> None:
         self.highlight_point = (
                 2.0 * x / self.width - 1.0,
                 2.0 * y / self.height - 1.0
             )
 
-    def draw(self):
-        if not self.ready:
+    def draw(self) -> None:
+        if not self.ready and self.scene.is_ready():
             self._init_gl()
             self._load_data()
             self.ready = True
@@ -90,14 +95,14 @@ class World:
         self._draw()
 
     def _load_shader(self, type, source):
-        shader = glCreateShader(type)
-        glShaderSource(shader, source)
-        glCompileShader(shader)
+        shader = GL.glCreateShader(type)
+        GL.glShaderSource(shader, source)
+        GL.glCompileShader(shader)
 
-        if glGetShaderiv(shader,GL_COMPILE_STATUS) != 1:
+        if GL.glGetShaderiv(shader, GL.GL_COMPILE_STATUS) != 1:
             raise Exception(
                 'Couldn\'t compile shader\nShader compilation Log:\n%s\n' %
-                glGetShaderInfoLog(shader)
+                GL.glGetShaderInfoLog(shader)
             )
 
         return shader
@@ -113,78 +118,65 @@ class World:
         fragment_shader_source = fragment_shader_file.read()
         fragment_shader_file.close()
 
-        vertex_shader = self._load_shader(GL_VERTEX_SHADER, vertex_shader_source)
-        fragment_shader = self._load_shader(GL_FRAGMENT_SHADER, fragment_shader_source)
+        vertex_shader = self._load_shader(GL.GL_VERTEX_SHADER, vertex_shader_source)
+        fragment_shader = self._load_shader(GL.GL_FRAGMENT_SHADER, fragment_shader_source)
 
-        program = glCreateProgram()
-        glAttachShader(program, vertex_shader)
-        glAttachShader(program, fragment_shader)
-        glLinkProgram(program)
+        program = GL.glCreateProgram()
+        GL.glAttachShader(program, vertex_shader)
+        GL.glAttachShader(program, fragment_shader)
+        GL.glLinkProgram(program)
 
         return program
 
     def _init_gl(self):
-        glEnable(GL_BLEND)
-        glEnable(GL_TEXTURE_2D)
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glDepthFunc(GL.GL_LESS)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
 
         self.program_ground = self._load_program('ground_vertex', 'ground_fragment')
         self.program_entities = self._load_program('entities_vertex', 'entities_fragment')
 
         try:
-            glUseProgram(self.program_ground)
-            self.loc_ground_proj = glGetUniformLocation(self.program_ground, "uniProj")
-            self.loc_ground_view = glGetUniformLocation(self.program_ground, "uniView")
+            GL.glUseProgram(self.program_ground)
+            self.loc_ground_proj = GL.glGetUniformLocation(self.program_ground, "uniProj")
+            self.loc_ground_view = GL.glGetUniformLocation(self.program_ground, "uniView")
         except OpenGL.error.GLError:
-            print(glGetProgramInfoLog(self.program_ground))
+            print(GL.glGetProgramInfoLog(self.program_ground))
             raise
 
         try:
-            glUseProgram(self.program_entities)
-            self.loc_entities_proj = glGetUniformLocation(self.program_entities, "uniProj")
-            self.loc_entities_view = glGetUniformLocation(self.program_entities, "uniView")
-            self.loc_entities_high = glGetUniformLocation(self.program_entities, "uniHighlight")
+            GL.glUseProgram(self.program_entities)
+            self.loc_entities_proj = GL.glGetUniformLocation(self.program_entities, "uniProj")
+            self.loc_entities_view = GL.glGetUniformLocation(self.program_entities, "uniView")
+            self.loc_entities_high = GL.glGetUniformLocation(self.program_entities, "uniHighlight")
         except OpenGL.error.GLError:
-            print(glGetProgramInfoLog(self.program_entities))
+            print(GL.glGetProgramInfoLog(self.program_entities))
             raise
 
-    def _load_texture(self, image_path):
-        image = pyglet.image.load(image_path)
-        texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, texture)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, image.get_data()
-        )
-        return texture
+    def _load_data(self) -> None:
+        self.radius = self.scene.get_radius()
+        self.elevation = self.scene.get_elevation(self.theta, self.phi)
 
-    def _load_data(self):
-        self.tex_grass = self._load_texture("res/images/grass.png")
-        self.tex_water = self._load_texture("res/images/water.png")
-        self.tex_hero = self._load_texture("res/images/hero.png")
+        self.media.load_textures()
 
         figure = geometry.Structures.sphere(5, self.radius)
-        self.renderer_water = graphics.SolidPolyhedronRenderer(figure, self.tex_water)
-        figure.rescale(self.state.elevation_function)
-        self.renderer_ground = graphics.SolidPolyhedronRenderer(figure, self.tex_grass)
+        self.renderer_water = graphics.SolidPolyhedronRenderer(figure, self.media.tex.water)
+        figure.rescale(self.scene.elevation_function)
+        self.renderer_ground = graphics.SolidPolyhedronRenderer(figure, self.media.tex.grass)
 
         self.renderer_hero = graphics.PlainRenderer(
                 self.radius + self.elevation,
-                self.theta, self.phi, self.bearing,
-                self.tex_hero
+                self.theta, self.phi, self.bearing, self.media.tex.hero, -1,
             )
 
         self.renderers_entities = [graphics.PlainRenderer(
-            self.state.elevation_function(self.theta, self.phi),
-            *coord, self.bearing, self.tex_hero
-        ) for coord in (
-            (0.499 * math.pi, 0.001 * math.pi),
-            (0.498 * math.pi, 0.002 * math.pi),
-        )]
+                self.scene.get_elevation(actor.theta, actor.phi, with_radius=True),
+                actor.theta, actor.phi, self.bearing,
+                self.media.tex[actor.texture_name],
+                actor.id,
+            ) for actor in self.scene.get_actors()]
 
     def _refresh_projection(self):
         self.projection = \
@@ -199,19 +191,19 @@ class World:
                   @ geometry.Matrices.rotation_z(-self.phi) \
                   @ geometry.Matrices.rotation_x(0.5 * math.pi)
 
-    def _draw(self):
+    def _draw(self) -> None:
         # Set up
-        glViewport(0, 0, self.width, self.height)
-        glClearColor(0.6, 0.6, 1.0, 1)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        GL.glViewport(0, 0, self.width, self.height)
+        GL.glClearColor(0.6, 0.6, 1.0, 1)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
         self._refresh_projection()
         self._refresh_view()
 
         # Draw ground
-        glUseProgram(self.program_ground)
-        glUniformMatrix4fv(self.loc_ground_proj, 1, GL_TRUE, self.projection)
-        glUniformMatrix4fv(self.loc_ground_view, 1, GL_TRUE, self.view)
+        GL.glUseProgram(self.program_ground)
+        GL.glUniformMatrix4fv(self.loc_ground_proj, 1, GL.GL_TRUE, self.projection)
+        GL.glUniformMatrix4fv(self.loc_ground_view, 1, GL.GL_TRUE, self.view)
 
         self.renderer_water.render()
         self.renderer_ground.render()
@@ -219,7 +211,11 @@ class World:
         # Update entities with bearing and sort them by distance from the camera
         mvp = self.projection @ self.view
         for renderer in self.renderers_entities:
-            renderer.change_bearing(self.bearing)
+            actor = self.scene.get_actor(renderer.actor_id)
+            renderer.change_position(
+                    self.scene.get_elevation(actor.theta, actor.phi, with_radius=True),
+                    actor.theta, actor.phi,
+                    self.bearing)
             renderer.calculate_screen_bounds(mvp)
         self.renderers_entities.sort(key=graphics.PlainRenderer.get_camera_distance)
 
@@ -233,18 +229,18 @@ class World:
             renderer.set_highlight(highlight)
 
         # Draw entities
-        glUseProgram(self.program_entities)
-        glUniformMatrix4fv(self.loc_entities_proj, 1, GL_TRUE, self.projection)
-        glUniformMatrix4fv(self.loc_entities_view, 1, GL_TRUE, self.view)
+        GL.glUseProgram(self.program_entities)
+        GL.glUniformMatrix4fv(self.loc_entities_proj, 1, GL.GL_TRUE, self.projection)
+        GL.glUniformMatrix4fv(self.loc_entities_view, 1, GL.GL_TRUE, self.view)
 
         for renderer in self.renderers_entities[::-1]:
             renderer.render(self.loc_entities_high)
 
-        glUniform1i(self.loc_entities_high, False)
+        GL.glUniform1i(self.loc_entities_high, False)
         self.renderer_hero \
             .change_position(self.radius + self.elevation, self.theta, self.phi, self.bearing)
         self.renderer_hero.render(self.loc_entities_high)
 
         # Clean up
-        glUseProgram(0)
+        GL.glUseProgram(0)
 

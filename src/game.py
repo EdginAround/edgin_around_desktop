@@ -1,24 +1,35 @@
 import pyglet
 
-from . import controls, world, world_state
+from . import animator, controls, engine, executor, proxy, scene, world, world_state
 
 class Window(pyglet.window.Window):
-    def __init__(self):
+    def __init__(self) -> None:
         super(Window, self).__init__(resizable=True)
         self.maximize()
 
-        state = world_state.WorldGenerator().generate(100.0)
-        self.world = world.World(state)
+        self.proxy = proxy.Proxy()
+
+        self.scene = scene.Scene()
+        self.animator = animator.Animator(self.scene)
+        self.world = world.World(self.scene)
         self.controls = controls.Controls(self.world)
+
+        self.state = world_state.WorldGenerator().generate(100.0)
+        self.engine = engine.Engine(self.proxy, self.state)
+
+        self.runner = executor.Runner(self.engine)
+        self.runner.start()
+
+        self.proxy.set_ends(self.engine, self.animator)
 
     def on_resize(self, width, height):
         self.world.resize(width, height)
 
     def on_draw(self):
-        pending_actions = self.controls.on_draw()
+        self.controls.on_draw()
+        self.animator.animate()
         self.world.draw()
-        if pending_actions:
-            self.schedule_redraw()
+        self.schedule_redraw()
 
     def on_key_press(self, symbol, modifiers):
         self.controls.handle_key_press(symbol, modifiers)
@@ -28,6 +39,10 @@ class Window(pyglet.window.Window):
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.world.highlight(x, y)
+
+    def on_close(self):
+        super().on_close()
+        self.runner.stop()
 
     def schedule_redraw(self):
         noop = lambda *args, **kwargs: None

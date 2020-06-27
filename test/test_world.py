@@ -1,12 +1,17 @@
 import unittest
 from math import pi
 
-from src import world, world_state
+from src import geometry, scene, world
 
 class WorldTest(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.scene = scene.Scene()
+        self.scene.configure(geometry.ElevationFunction(1.0))
+
     def test_bearing(self):
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         self.assertEqual(w.bearing, 0.0)
         w.rotate_by(1.0 * pi)
         self.assertEqual(w.bearing, pi)
@@ -18,8 +23,7 @@ class WorldTest(unittest.TestCase):
     def test_move_right_along_equator(self):
         step = (0.001 * pi, 0.0)
 
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         self.assertEqual(w.theta, 0.5 * pi)
         self.assertEqual(w.phi, 0.0)
         self.assertEqual(w.bearing, 0.0)
@@ -38,8 +42,7 @@ class WorldTest(unittest.TestCase):
     def test_move_right_across_equator(self):
         step = (0.001 * pi, 0.0)
 
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         w.set_lookat(0.25 * pi, 0.0)
         self.assertEqual(w.theta, 0.25 * pi)
         self.assertEqual(w.phi, 0.0)
@@ -60,8 +63,7 @@ class WorldTest(unittest.TestCase):
     def test_move_left_along_equator(self):
         step = (-0.001 * pi, 0.0)
 
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         self.assertEqual(w.theta, 0.5 * pi)
         self.assertEqual(w.phi, 0.0)
         self.assertEqual(w.bearing, 0.0)
@@ -80,8 +82,7 @@ class WorldTest(unittest.TestCase):
     def test_move_left_across_equator(self):
         step = (-0.001 * pi, 0.0)
 
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         w.set_lookat(0.75 * pi, 0.0)
         self.assertEqual(w.theta, 0.75 * pi)
         self.assertEqual(w.phi, 0.0)
@@ -102,8 +103,7 @@ class WorldTest(unittest.TestCase):
     def test_move_backward_along_meridian(self):
         step = (0.0, -0.001 * pi)
 
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         self.assertEqual(w.theta, 0.5 * pi)
         self.assertEqual(w.phi, 0.0)
         self.assertEqual(w.bearing, 0.0)
@@ -128,8 +128,7 @@ class WorldTest(unittest.TestCase):
     def test_move_forward_along_meridian(self):
         step = (0.0, 0.001 * pi)
 
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         self.assertEqual(w.theta, 0.5 * pi)
         self.assertEqual(w.phi, 0.0)
         self.assertEqual(w.bearing, 0.0)
@@ -155,8 +154,7 @@ class WorldTest(unittest.TestCase):
         step_forward = (0.0, 0.001 * pi)
         step_right = (0.001 * pi, 0.0)
 
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         w.set_lookat(0.25 * pi, 0.0)
         self.assertEqual(w.theta, 0.25 * pi)
         self.assertEqual(w.phi, 0.0)
@@ -172,8 +170,7 @@ class WorldTest(unittest.TestCase):
     def test_move_forward_with_bearing(self):
         step = (0.0, 0.001 * pi)
 
-        state = world_state.WorldGenerator().generate_empty(1.0)
-        w = world.World(state)
+        w = world.World(self.scene)
         w.rotate_by(0.25 * pi)
         self.assertEqual(w.theta, 0.5 * pi)
         self.assertEqual(w.phi, 0.0)

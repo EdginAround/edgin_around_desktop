@@ -2,12 +2,12 @@ import math
 import numpy
 import ctypes
 
-from OpenGL.GL import *
+from OpenGL import GL
 
 from . import geometry
 
 class SolidPolyhedronRenderer:
-    def __init__(self, figure, texture):
+    def __init__(self, figure, texture_id) -> None:
         vertices = numpy.array(
             [value for vertex in figure.get_vertices() for value in vertex],
             dtype=numpy.float32
@@ -18,44 +18,46 @@ class SolidPolyhedronRenderer:
             dtype=numpy.uint32
         )
 
-        self.texture = texture
+        self.texture_id = texture_id
         self.index_count = len(indices)
-        self.vbo = glGenBuffers(1)
-        self.ibo = glGenBuffers(1)
+        self.vbo = GL.glGenBuffers(1)
+        self.ibo = GL.glGenBuffers(1)
 
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBufferData(GL_ARRAY_BUFFER, 4 * len(vertices), vertices, GL_STATIC_DRAW)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.vbo)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, 4 * len(vertices), vertices, GL.GL_STATIC_DRAW)
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ibo)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * len(indices), indices, GL_STATIC_DRAW)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self.ibo)
+        GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, 4 * len(indices), indices, GL.GL_STATIC_DRAW)
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)
 
-    def __del__(self):
-        glDeleteBuffers(2, [self.vbo, self.ibo])
+    def __del__(self) -> None:
+        GL.glDeleteBuffers(2, [self.vbo, self.ibo])
 
-    def render(self):
-        glBindTexture(GL_TEXTURE_2D, self.texture)
+    def render(self) -> None:
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture_id)
 
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ibo)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.vbo)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self.ibo)
 
-        glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, None)
+        GL.glEnableVertexAttribArray(0)
+        GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
 
-        glDrawElements(GL_TRIANGLES, 4 * self.index_count, GL_UNSIGNED_INT, None)
+        GL.glDrawElements(GL.GL_TRIANGLES, 4 * self.index_count, GL.GL_UNSIGNED_INT, None)
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)
+
 
 class PlainRenderer:
-    def __init__(self, radius, theta, phi, bearing, texture):
+    def __init__(self, radius, theta, phi, bearing, texture_id, actor_id) -> None:
         self.radius = radius
         self.theta = theta
         self.phi = phi
+        self.texture_id = texture_id
+        self.actor_id = actor_id
         self.bearing = bearing
-        self.texture = texture
 
         self.highlight = False
 
@@ -63,54 +65,54 @@ class PlainRenderer:
         self.cam_bottom = None
         self.cam_right = None
         self.cam_top = None
-        self.cam_dist = None
+        self.cam_dist = 0.0
 
-        self.vbo = glGenBuffers(1)
-        self.ibo = glGenBuffers(1)
+        self.vbo = GL.glGenBuffers(1)
+        self.ibo = GL.glGenBuffers(1)
 
         self._load_vertices()
         self._load_indices()
 
-    def __del__(self):
-        glDeleteBuffers(2, [self.vbo, self.ibo])
+    def __del__(self) -> None:
+        GL.glDeleteBuffers(2, [self.vbo, self.ibo])
 
-    def set_highlight(self, highlight):
+    def set_highlight(self, highlight) -> None:
         self.highlight = highlight
 
-    def get_camera_distance(self):
+    def get_camera_distance(self) -> float:
         return self.cam_dist
 
-    def render(self, loc_highlight):
-        glBindTexture(GL_TEXTURE_2D, self.texture)
+    def render(self, loc_highlight) -> None:
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture_id)
 
-        glUniform1i(loc_highlight, int(self.highlight))
+        GL.glUniform1i(loc_highlight, int(self.highlight))
 
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ibo)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.vbo)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self.ibo)
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 20, None)
-        glEnableVertexAttribArray(0)
+        GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 20, None)
+        GL.glEnableVertexAttribArray(0)
 
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(12))
-        glEnableVertexAttribArray(1)
+        GL.glVertexAttribPointer(1, 2, GL.GL_FLOAT, GL.GL_FALSE, 20, ctypes.c_void_p(12))
+        GL.glEnableVertexAttribArray(1)
 
-        glDrawElements(GL_TRIANGLES, 4 * self.index_count, GL_UNSIGNED_INT, None)
+        GL.glDrawElements(GL.GL_TRIANGLES, 4 * self.index_count, GL.GL_UNSIGNED_INT, None)
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)
 
-    def change_position(self, radius, theta, phi, bearing):
+    def change_position(self, radius, theta, phi, bearing) -> None:
         self.radius = radius
         self.theta = theta
         self.phi = phi
         self.bearing = bearing
         self._load_vertices()
 
-    def change_bearing(self, bearing):
+    def change_bearing(self, bearing) -> None:
         self.bearing = bearing
         self._load_vertices()
 
-    def calculate_screen_bounds(self, mvp):
+    def calculate_screen_bounds(self, mvp) -> None:
         left_bottom, right_top = mvp @ self.corners[0], mvp @ self.corners[3]
         self.cam_left = left_bottom[0] / left_bottom[3]
         self.cam_bottom = left_bottom[1] / left_bottom[3]
@@ -118,23 +120,23 @@ class PlainRenderer:
         self.cam_top = right_top[1] / right_top[3]
         self.cam_dist = left_bottom[2] / left_bottom[3]
 
-    def get_boundary(self):
+    def get_boundary(self) -> geometry.Boundary2D:
         return geometry.Boundary2D(self.cam_left, self.cam_bottom, self.cam_right, self.cam_top)
 
-    def _load_vertices(self):
+    def _load_vertices(self) -> None:
         vertices = self._prepare_vertices()
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBufferData(GL_ARRAY_BUFFER, 4 * len(vertices), vertices, GL_DYNAMIC_DRAW)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.vbo)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, 4 * len(vertices), vertices, GL.GL_DYNAMIC_DRAW)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
 
-    def _load_indices(self):
+    def _load_indices(self) -> None:
         indices = numpy.array([0, 1, 2, 2, 1, 3], dtype=numpy.uint32)
         self.index_count = len(indices)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ibo)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * len(indices), indices, GL_STATIC_DRAW)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self.ibo)
+        GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, 4 * len(indices), indices, GL.GL_STATIC_DRAW)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)
 
-    def _prepare_vertices(self):
+    def _prepare_vertices(self) -> numpy.array:
         pos = geometry.Coordinates.spherical_to_cartesian(self.radius, self.theta, self.phi)
 
         self.pos = numpy.array((*pos, 1.0), dtype=numpy.float32).reshape(4, 1)
