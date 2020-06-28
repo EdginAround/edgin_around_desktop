@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from . import geometry, graphics
 
@@ -51,7 +51,12 @@ class Scene:
     def get_actors(self) -> Iterable[Actor]:
         return self.actors.values()
 
-    def configure(self, elevation_function):
+    def get_hero_position(self) -> Tuple[float, float]:
+        hero = self.actors[self.hero_actor_id]
+        return hero.theta, hero.phi
+
+    def configure(self, hero_actor_id, elevation_function):
+        self.hero_actor_id = hero_actor_id
         self.elevation_function = elevation_function
 
     def create_actors(self, actors: Iterable[Actor]) -> None:

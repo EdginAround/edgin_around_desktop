@@ -8,7 +8,7 @@ class WorldTest(unittest.TestCase):
         super().__init__(*args, **kwargs)
 
         self.scene = scene.Scene()
-        self.scene.configure(geometry.ElevationFunction(1.0))
+        self.scene.configure(0, geometry.ElevationFunction(1.0))
 
     def test_bearing(self):
         w = world.World(self.scene)

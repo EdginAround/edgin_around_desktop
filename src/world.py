@@ -197,6 +197,10 @@ class World:
         GL.glClearColor(0.6, 0.6, 1.0, 1)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
+        # Get hero position
+        self.set_lookat(*self.scene.get_hero_position())
+
+        # Refresh trnasformation
         self._refresh_projection()
         self._refresh_view()
 
@@ -235,11 +239,6 @@ class World:
 
         for renderer in self.renderers_entities[::-1]:
             renderer.render(self.loc_entities_high)
-
-        GL.glUniform1i(self.loc_entities_high, False)
-        self.renderer_hero \
-            .change_position(self.radius + self.elevation, self.theta, self.phi, self.bearing)
-        self.renderer_hero.render(self.loc_entities_high)
 
         # Clean up
         GL.glUseProgram(0)

@@ -11,9 +11,20 @@ class Proxy:
         if self.animator is not None:
             self.animator.add(action.into_animation())
 
+    def send_event(self, event: events.Event) -> None:
+        if self.engine is not None:
+            self.engine.handle_event(0, event)
+
     def set_ends(self, engine, animator) -> None:
         self.engine = engine
         self.animator = animator
 
         if self.engine is not None:
-            self.engine.handle_event(events.ConnectionEvent())
+            self.engine.handle_event(0, events.ConnectionEvent())
+
+    def start_moving(self, bearing) -> None:
+        self.send_event(events.StartMovingEvent(bearing))
+
+    def stop_moving(self) -> None:
+        self.send_event(events.StopMovingEvent())
+

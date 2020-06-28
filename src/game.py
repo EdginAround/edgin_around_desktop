@@ -1,6 +1,6 @@
 import pyglet
 
-from . import animator, controls, engine, executor, proxy, scene, world, world_state
+from . import animator, controls, engine, executor, proxy, scene, state, world
 
 class Window(pyglet.window.Window):
     def __init__(self) -> None:
@@ -12,9 +12,9 @@ class Window(pyglet.window.Window):
         self.scene = scene.Scene()
         self.animator = animator.Animator(self.scene)
         self.world = world.World(self.scene)
-        self.controls = controls.Controls(self.world)
+        self.controls = controls.Controls(self.world, self.proxy)
 
-        self.state = world_state.WorldGenerator().generate(100.0)
+        self.state = state.WorldGenerator().generate(100.0)
         self.engine = engine.Engine(self.proxy, self.state)
 
         self.runner = executor.Runner(self.engine)

@@ -2,9 +2,9 @@ import random
 
 from math import pi
 
-from typing import Optional
+from typing import Optional, Tuple
 
-from . import events, tasks
+from . import actions, events, tasks
 
 
 class PerformerFeature:
@@ -42,8 +42,8 @@ class Entity:
     def get_task(self) -> tasks.Task:
         return self.task
 
-    def handle_event(self, event) -> tasks.Task:
-        return self.task
+    def handle_event(self, event) -> Tuple[Optional[actions.Action], tasks.Task]:
+        return None, self.task
 
 
 class Brain:
@@ -70,10 +70,40 @@ class Warior(Entity):
     def get_name(self) -> str:
         return 'warior'
 
-    def handle_event(self, event: events.Event) -> tasks.Task:
+    def handle_event(self, event: events.Event) -> Tuple[Optional[actions.Action], tasks.Task]:
         if isinstance(event, events.ResumeEvent) or isinstance(event, events.FinishedEvent):
             bearing = random.uniform(-pi, pi)
-            return tasks.WalkTask(self.get_id(), bearing=bearing, duration=1.0, speed=1.0)
+            self.task = tasks.WalkTask(self.get_id(), bearing=bearing, duration=1.0, speed=1.0)
 
-        return self.task
+        return None, self.task
+
+
+class Hero(Entity):
+    LONG_TIMEOUT = 20.0 # seconds
+
+    def __init__(self, id, position) -> None:
+        super().__init__(id, position)
+
+    def get_name(self) -> str:
+        return 'hero'
+
+    def handle_event(self, event: events.Event) -> Tuple[Optional[actions.Action], tasks.Task]:
+        action = None
+
+        if isinstance(event, events.ResumeEvent) or isinstance(event, events.FinishedEvent):
+            self.task = tasks.IdleTask()
+
+        elif isinstance(event, events.StartMovingEvent):
+            self.task = tasks.WalkTask(
+                    self.get_id(),
+                    bearing=event.bearing,
+                    duration=Hero.LONG_TIMEOUT,
+                    speed=1.0,
+                )
+
+        elif isinstance(event, events.StopMovingEvent):
+            action = actions.LocalizeAction(self.get_id())
+            self.task = tasks.IdleTask()
+
+        return action, self.task
 

@@ -8,11 +8,20 @@ from pyglet.window import key
 class Controls:
     MOD_MASK = key.MOD_CTRL | key.MOD_SHIFT
 
-    def __init__(self, world):
+    def __init__(self, world, proxy):
         NOMODS = 0x0
         self.prev_moment = None
+        self.current_symbol_pressed = None
 
         self.press_actions = {
+                (key.A, NOMODS): lambda: proxy.start_moving(world.bearing - 0.5 * pi),
+                (key.D, NOMODS): lambda: proxy.start_moving(world.bearing + 0.5 * pi),
+                (key.S, NOMODS): lambda: proxy.start_moving(world.bearing + 1.0 * pi),
+                (key.W, NOMODS): lambda: proxy.start_moving(world.bearing + 0.0 * pi),
+                (key.LEFT,  NOMODS): lambda: proxy.start_moving(world.bearing - 0.5 * pi),
+                (key.RIGHT, NOMODS): lambda: proxy.start_moving(world.bearing + 0.5 * pi),
+                (key.DOWN,  NOMODS): lambda: proxy.start_moving(world.bearing + 1.0 * pi),
+                (key.UP,    NOMODS): lambda: proxy.start_moving(world.bearing + 0.0 * pi),
                 (key.BRACKETLEFT, NOMODS): lambda: world.tilt_by(-0.1 * pi),
                 (key.BRACKETRIGHT, NOMODS): lambda: world.tilt_by(0.1 * pi),
                 (key.PLUS, NOMODS): lambda: world.zoom_by(5),
@@ -21,19 +30,20 @@ class Controls:
                 (key.NUM_SUBTRACT, NOMODS): lambda: world.zoom_by(-5),
             }
 
-        self.release_actions = {}
+        self.release_actions = {
+                (key.A, NOMODS): lambda: proxy.stop_moving(),
+                (key.D, NOMODS): lambda: proxy.stop_moving(),
+                (key.S, NOMODS): lambda: proxy.stop_moving(),
+                (key.W, NOMODS): lambda: proxy.stop_moving(),
+                (key.LEFT,  NOMODS): lambda: proxy.stop_moving(),
+                (key.RIGHT, NOMODS): lambda: proxy.stop_moving(),
+                (key.DOWN,  NOMODS): lambda: proxy.stop_moving(),
+                (key.UP,    NOMODS): lambda: proxy.stop_moving(),
+            }
 
         self.repeatable_actions = {
-                (key.A, NOMODS): lambda intv: world.move(-pi * intv, 0.0),
-                (key.D, NOMODS): lambda intv: world.move(pi * intv, 0.0),
                 (key.E, NOMODS): lambda intv: world.rotate_by(0.5 * pi * intv),
                 (key.Q, NOMODS): lambda intv: world.rotate_by(-0.5 * pi * intv),
-                (key.S, NOMODS): lambda intv: world.move(0.0, -pi * intv),
-                (key.W, NOMODS): lambda intv: world.move(0.0, pi * intv),
-                (key.LEFT, NOMODS): lambda intv: world.move(-pi * intv, 0.0),
-                (key.RIGHT, NOMODS): lambda intv: world.move(pi * intv, 0.0),
-                (key.UP, NOMODS): lambda intv: world.move(0.0, pi * intv),
-                (key.DOWN, NOMODS): lambda intv: world.move(0.0, -pi * intv),
             }
 
         self.active_actions = {}
@@ -44,6 +54,8 @@ class Controls:
 
         if (action := self.press_actions.get(key, None)) is not None:
             action()
+            self.current_symbol_pressed = symbol
+
         elif (action := self.repeatable_actions.get(key, None)) is not None:
             self.active_actions[key] = action
 
@@ -51,7 +63,11 @@ class Controls:
         key = (symbol, Controls.MOD_MASK & modifiers)
 
         if (action := self.release_actions.get(key, None)) is not None:
-            action()
+            # Perform the release action only if the corresponding press action is still active
+            if self.current_symbol_pressed == symbol:
+                action()
+                self.current_symbol_pressed = None
+
         elif key in self.repeatable_actions:
             del self.active_actions[key]
 

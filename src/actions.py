@@ -14,15 +14,16 @@ class Action:
 
 
 class ConfigurationAction(Action):
-    def __init__(self, elevation_function: geometry.ElevationFunction) -> None:
+    def __init__(self, hero_actor_id: int, elevation_function: geometry.ElevationFunction) -> None:
         super().__init__()
+        self.hero_actor_id = hero_actor_id
         self.elevation_function = elevation_function
 
     def __str__(self) -> str:
         return 'ConfigurationAction'
 
     def into_animation(self) -> animations.ConfigurationAnimation:
-        return animations.ConfigurationAnimation(self.elevation_function)
+        return animations.ConfigurationAnimation(self.hero_actor_id, self.elevation_function)
 
 
 class CreateActorsAction(Action):
@@ -57,4 +58,15 @@ class MovementAction(Action):
                 self.bearing,
                 self.speed,
             )
+
+class LocalizeAction(Action):
+    def __init__(self, actor_id) -> None:
+        super().__init__()
+        self.actor_id = actor_id
+
+    def __str__(self) -> str:
+        return f'LocalizeAction(actor_id={self.actor_id})'
+
+    def into_animation(self) -> animations.LocalizeAnimation:
+        return animations.LocalizeAnimation(self.actor_id)
 
