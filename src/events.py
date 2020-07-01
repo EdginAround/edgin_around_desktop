@@ -3,11 +3,6 @@ class Event:
         pass
 
 
-class ConnectionEvent(Event):
-    def __init__(self) -> None:
-        super().__init__()
-
-
 class ResumeEvent(Event):
     def __init__(self) -> None:
         super().__init__()

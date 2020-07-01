@@ -4,7 +4,7 @@ from math import pi
 
 from typing import Optional, Tuple
 
-from . import actions, events, tasks
+from . import actions, defs, jobs, events, tasks
 
 
 class PerformerFeature:
@@ -20,10 +20,26 @@ class EatableFeature:
         pass
 
 
+class EaterFeature:
+    def __init__(self, max_capacity: float, hunger_value: float) -> None:
+        self.max_capacity = max_capacity
+        self.hunger_value = hunger_value
+
+    def deduce(self, value: float) -> None:
+        self.hunger_value = max(self.hunger_value - value, 0.0)
+
+    def get_hunger(self) -> float:
+        return self.hunger_value
+
+
 class Features:
     def __init__(self) -> None:
         self.performer: Optional[PerformerFeature] = None
         self.eatable: Optional[EatableFeature] = None
+        self.eater: Optional[EaterFeature] = None
+
+
+EntityId = int
 
 
 class Entity:
@@ -33,7 +49,7 @@ class Entity:
         self.task: tasks.Task = tasks.IdleTask()
         self.features = Features()
 
-    def get_id(self) -> int:
+    def get_id(self) -> EntityId:
         return self.id
 
     def get_name(self) -> str:
@@ -44,6 +60,9 @@ class Entity:
 
     def handle_event(self, event) -> Tuple[Optional[actions.Action], tasks.Task]:
         return None, self.task
+
+    def handle_job(self, event) -> Optional[actions.Action]:
+        return None
 
 
 class Brain:
@@ -83,6 +102,7 @@ class Hero(Entity):
 
     def __init__(self, id, position) -> None:
         super().__init__(id, position)
+        self.features.eater = EaterFeature(max_capacity=100.0, hunger_value=50.0)
 
     def get_name(self) -> str:
         return 'hero'
@@ -106,4 +126,20 @@ class Hero(Entity):
             self.task = tasks.IdleTask()
 
         return action, self.task
+
+    def handle_job(self, job: jobs.Job) -> actions.StatUpdateAction:
+        assert self.features.eater is not None
+
+        if isinstance(job, jobs.HungerDrainJob):
+            self.features.eater.deduce(1.0)
+
+        return actions.StatUpdateAction(self.get_id(), self.gather_stats())
+
+    def gather_stats(self) -> defs.Stats:
+        assert self.features.eater is not None
+
+        return defs.Stats(
+                hunger=self.features.eater.hunger_value,
+                max_hunger=self.features.eater.max_capacity,
+            )
 

@@ -2,7 +2,7 @@ import time
 
 from typing import Iterable, List, Optional
 
-from . import scene
+from . import defs, dials, scene
 
 
 class Animation:
@@ -29,7 +29,7 @@ class Animation:
     def expire(self) -> None:
         self._expired = True
 
-    def tick(self, tick_interval, scene: scene.Scene) -> None:
+    def tick(self, tick_interval, scene: scene.Scene, dials: dials.Dials) -> None:
         raise NotImplementedError('This animation is not implemented')
 
 
@@ -39,7 +39,7 @@ class ConfigurationAnimation(Animation):
         self.hero_actor_id = hero_actor_id
         self.elevation_function = elevation_function
 
-    def tick(self, tick_interval, scene: scene.Scene) -> None:
+    def tick(self, tick_interval, scene: scene.Scene, dials: dials.Dials) -> None:
         scene.configure(self.hero_actor_id, self.elevation_function)
         self.expire()
 
@@ -49,7 +49,7 @@ class CreateActorsAnimation(Animation):
         super().__init__(None)
         self.actors = actors
 
-    def tick(self, tick_interval, scene: scene.Scene) -> None:
+    def tick(self, tick_interval, scene: scene.Scene, dials: dials.Dials) -> None:
         scene.create_actors(self.actors)
         self.expire()
 
@@ -64,7 +64,7 @@ class MovementAnimation(Animation):
     def get_actor_id(self) -> scene.ActorId:
         return self.actor_id
 
-    def tick(self, tick_interval, scene: scene.Scene) -> None:
+    def tick(self, tick_interval, scene: scene.Scene, dials: dials.Dials) -> None:
         distance = self.speed * tick_interval
         actor = scene.get_actor(self.actor_id)
         actor.move_by(distance, self.bearing, scene.get_radius())
@@ -78,6 +78,18 @@ class LocalizeAnimation(Animation):
     def get_actor_id(self) -> scene.ActorId:
         return self.actor_id
 
-    def tick(self, tick_interval, scene: scene.Scene) -> None:
+    def tick(self, tick_interval, scene: scene.Scene, dials: dials.Dials) -> None:
+        self.expire()
+
+
+class StatUpdateAnimation(Animation):
+    def __init__(self, actor_id, stats: defs.Stats) -> None:
+        super().__init__(None)
+        self.actor_id = actor_id
+        self.stats = stats
+
+    def tick(self, tick_interval, scene: scene.Scene, dials: dials.Dials) -> None:
+        actor = scene.get_actor(self.actor_id)
+        dials.set_stats(self.stats)
         self.expire()
 

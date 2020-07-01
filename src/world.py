@@ -1,3 +1,4 @@
+
 import math
 import numpy
 import pyglet
@@ -7,6 +8,7 @@ from OpenGL import GL
 from typing import Optional, Tuple
 
 from . import geometry, graphics, media, scene
+
 
 class World:
     ZOOM_BOUNDS = (0.0, 1000.0)
@@ -92,7 +94,9 @@ class World:
             self._load_data()
             self.ready = True
 
+        self._setup_gl()
         self._draw()
+        self._cleanup_gl()
 
     def _load_shader(self, type, source):
         shader = GL.glCreateShader(type)
@@ -129,12 +133,6 @@ class World:
         return program
 
     def _init_gl(self):
-        GL.glEnable(GL.GL_BLEND)
-        GL.glEnable(GL.GL_TEXTURE_2D)
-        GL.glEnable(GL.GL_DEPTH_TEST)
-        GL.glDepthFunc(GL.GL_LESS)
-        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
-
         self.program_ground = self._load_program('ground_vertex', 'ground_fragment')
         self.program_entities = self._load_program('entities_vertex', 'entities_fragment')
 
@@ -155,6 +153,8 @@ class World:
             print(GL.glGetProgramInfoLog(self.program_entities))
             raise
 
+        GL.glUseProgram(0)
+
     def _load_data(self) -> None:
         self.radius = self.scene.get_radius()
         self.elevation = self.scene.get_elevation(self.theta, self.phi)
@@ -165,11 +165,6 @@ class World:
         self.renderer_water = graphics.SolidPolyhedronRenderer(figure, self.media.tex.water)
         figure.rescale(self.scene.elevation_function)
         self.renderer_ground = graphics.SolidPolyhedronRenderer(figure, self.media.tex.grass)
-
-        self.renderer_hero = graphics.PlainRenderer(
-                self.radius + self.elevation,
-                self.theta, self.phi, self.bearing, self.media.tex.hero, -1,
-            )
 
         self.renderers_entities = [graphics.PlainRenderer(
                 self.scene.get_elevation(actor.theta, actor.phi, with_radius=True),
@@ -191,12 +186,26 @@ class World:
                   @ geometry.Matrices.rotation_z(-self.phi) \
                   @ geometry.Matrices.rotation_x(0.5 * math.pi)
 
-    def _draw(self) -> None:
-        # Set up
+    def _setup_gl(self):
+        GL.glEnable(GL.GL_BLEND)
+        GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glDepthFunc(GL.GL_LESS)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+
         GL.glViewport(0, 0, self.width, self.height)
         GL.glClearColor(0.6, 0.6, 1.0, 1)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
+    def _cleanup_gl(self):
+        GL.glUseProgram(0)
+        GL.glClear(GL.GL_DEPTH_BUFFER_BIT)
+
+        GL.glDisable(GL.GL_BLEND)
+        GL.glDisable(GL.GL_TEXTURE_2D)
+        GL.glDisable(GL.GL_DEPTH_TEST)
+
+    def _draw(self) -> None:
         # Get hero position
         self.set_lookat(*self.scene.get_hero_position())
 
@@ -239,7 +248,4 @@ class World:
 
         for renderer in self.renderers_entities[::-1]:
             renderer.render(self.loc_entities_high)
-
-        # Clean up
-        GL.glUseProgram(0)
 

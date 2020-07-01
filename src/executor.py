@@ -27,10 +27,10 @@ class Scheduler:
 
 
 class Runner:
-    def __init__(self, engine) -> None:
+    def __init__(self, processor) -> None:
         def target() -> None:
             scheduler = Scheduler()
-            engine.start(scheduler)
+            processor.start(scheduler)
             while self._event.is_set():
                 with scheduler._lock:
                     if len(scheduler._queue) < 1: break
@@ -38,7 +38,7 @@ class Runner:
                     heapq.heappop(scheduler._queue)
 
                 time.sleep(max(event.moment - time.monotonic(), 0.0))
-                engine.run(scheduler, **event.kwargs)
+                processor.run(**event.kwargs)
 
         self._event = threading.Event()
         self._thread = threading.Thread(target=target)

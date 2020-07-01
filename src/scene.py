@@ -19,6 +19,7 @@ class Actor:
     def get_id(self):
         return self.id
 
+
 class Scene:
     def __init__(self) -> None:
         self.elevation_function: Optional[geometry.ElevationFunction] = None

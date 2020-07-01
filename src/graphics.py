@@ -6,6 +6,7 @@ from OpenGL import GL
 
 from . import geometry
 
+
 class SolidPolyhedronRenderer:
     def __init__(self, figure, texture_id) -> None:
         vertices = numpy.array(
@@ -83,20 +84,21 @@ class PlainRenderer:
         return self.cam_dist
 
     def render(self, loc_highlight) -> None:
-        GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture_id)
-
         GL.glUniform1i(loc_highlight, int(self.highlight))
-
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture_id)
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.vbo)
         GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self.ibo)
 
-        GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 20, None)
+        GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 20, ctypes.c_void_p(0))
         GL.glEnableVertexAttribArray(0)
 
         GL.glVertexAttribPointer(1, 2, GL.GL_FLOAT, GL.GL_FALSE, 20, ctypes.c_void_p(12))
         GL.glEnableVertexAttribArray(1)
 
         GL.glDrawElements(GL.GL_TRIANGLES, 4 * self.index_count, GL.GL_UNSIGNED_INT, None)
+
+        GL.glDisableVertexAttribArray(1)
+        GL.glDisableVertexAttribArray(0)
 
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
         GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)

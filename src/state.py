@@ -10,9 +10,6 @@ class State:
         self.elevation_function = elevation_function
         self.entities = {e.get_id(): e for e in entities}
 
-    def get_performers(self):
-        return [e for e in self.entities.values() if e.features.performer is not None]
-
     def get_entities(self) -> Iterable[entity.Entity]:
         return self.entities.values()
 

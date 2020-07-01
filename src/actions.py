@@ -1,6 +1,6 @@
 from typing import List
 
-from . import animations, geometry, scene
+from . import animations, defs, geometry, scene
 
 class Action:
     def __init__(self) -> None:
@@ -60,7 +60,7 @@ class MovementAction(Action):
             )
 
 class LocalizeAction(Action):
-    def __init__(self, actor_id) -> None:
+    def __init__(self, actor_id: scene.ActorId) -> None:
         super().__init__()
         self.actor_id = actor_id
 
@@ -69,4 +69,18 @@ class LocalizeAction(Action):
 
     def into_animation(self) -> animations.LocalizeAnimation:
         return animations.LocalizeAnimation(self.actor_id)
+
+
+class StatUpdateAction(Action):
+    def __init__(self, actor_id: scene.ActorId, stats: defs.Stats) -> None:
+        super().__init__()
+        self.actor_id = actor_id
+        self.stats = stats
+
+    def __str__(self) -> str:
+        return f'LocalizeAction(hunger={self.stats.hunger}/{self.stats.max_hunger})'
+
+    def into_animation(self) -> animations.StatUpdateAnimation:
+        return animations.StatUpdateAnimation(self.actor_id, self.stats)
+
 
