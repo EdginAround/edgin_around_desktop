@@ -7,7 +7,7 @@ from OpenGL import GL
 
 from typing import Optional, Tuple
 
-from . import geometry, graphics, media, scene
+from . import defs, geometry, graphics, media, scene
 
 
 class World:
@@ -17,7 +17,9 @@ class World:
     def __init__(self, scene: scene.Scene) -> None:
         self.width  = 600
         self.height = 400
+
         self.highlight_point: Optional[Tuple[float, float]] = None
+        self.highlight_actor_id = None
 
         self.radius = scene.get_radius()
         self.theta = 0.5 * math.pi
@@ -30,6 +32,9 @@ class World:
         self.ready = False
         self.scene = scene
         self.media = media.Media()
+
+    def get_highlight_actor_id(self) -> Optional[defs.ActorId]:
+        return self.highlight_actor_id
 
     def set_lookat(self, theta, phi) -> None:
         self.theta = theta
@@ -239,6 +244,7 @@ class World:
             if self.highlight_point is not None and not highlighted:
                 highlight = renderer.get_boundary().contains(*self.highlight_point)
                 highlighted = highlighted or highlight
+                self.highlight_actor_id = renderer.actor_id if highlight else None
             renderer.set_highlight(highlight)
 
         # Draw entities

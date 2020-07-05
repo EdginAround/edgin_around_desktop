@@ -1,8 +1,6 @@
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from . import geometry, graphics
-
-ActorId = int
+from . import defs, geometry, graphics
 
 
 class Actor:
@@ -23,7 +21,7 @@ class Actor:
 class Scene:
     def __init__(self) -> None:
         self.elevation_function: Optional[geometry.ElevationFunction] = None
-        self.actors: Dict[ActorId, Actor] = dict()
+        self.actors: Dict[defs.ActorId, Actor] = dict()
 
     def is_ready(self) -> bool:
         return self.elevation_function is not None
@@ -43,7 +41,7 @@ class Scene:
         else:
             return 0.0
 
-    def get_actor(self, actor_id: ActorId) -> Actor:
+    def get_actor(self, actor_id: defs.ActorId) -> Actor:
         if actor_id in self.actors:
             return self.actors[actor_id]
         else:
@@ -63,5 +61,9 @@ class Scene:
     def create_actors(self, actors: Iterable[Actor]) -> None:
         for actor in actors:
             self.actors[actor.id] = actor
+
+    def delete_actors(self, actor_ids: Iterable[defs.ActorId]) -> None:
+        for id in actor_ids:
+            del self.actors[id]
 
 

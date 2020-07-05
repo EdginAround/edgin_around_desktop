@@ -2,25 +2,30 @@ import math
 
 from typing import Iterable, List, Optional
 
-from . import entity, geometry
+from . import entities, essentials, geometry
 
 
 class State:
-    def __init__(self, elevation_function, entities: List[entity.Entity]) -> None:
+    def __init__(self, elevation_function, entities: List[essentials.Entity]) -> None:
         self.elevation_function = elevation_function
         self.entities = {e.get_id(): e for e in entities}
 
-    def get_entities(self) -> Iterable[entity.Entity]:
+    def get_entities(self) -> Iterable[essentials.Entity]:
         return self.entities.values()
 
-    def get_entity(self, entity_id: int) -> Optional[entity.Entity]:
+    def get_entity(self, entity_id: int) -> Optional[essentials.Entity]:
         return self.entities.get(entity_id, None)
+
+    def get_distance(self, entity1: essentials.Entity, entity2: essentials.Entity) -> float:
+        point1 = geometry.Point(*entity1.position)
+        point2 = geometry.Point(*entity2.position)
+        return point1.great_circle_distance_to(point2, self.elevation_function.get_radius())
 
 
 class WorldGenerator:
     def generate_basic(self, radius) -> State:
         elevation_function = geometry.ElevationFunction(radius)
-        entities: List[entity.Entity] = list()
+        entities: List[essentials.Entity] = list()
         return State(elevation_function, entities)
 
     def generate(self, radius) -> State:
@@ -42,11 +47,13 @@ class WorldGenerator:
         elevation_function.add(continents)
 
         # Entities
-        entities: List[entity.Entity] = [
-            entity.Hero(0, (0.5 * math.pi, 0.0 * math.pi)),
-            entity.Warior(1, (0.499 * math.pi, 0.001 * math.pi)),
-            entity.Warior(2, (0.498 * math.pi, 0.002 * math.pi)),
+        entity_list: List[essentials.Entity] = [
+            entities.Axe(4, (0.501 * math.pi, -0.001 * math.pi)),
+            entities.Hero(0, (0.500 * math.pi, 0.000 * math.pi)),
+            entities.Warior(1, (0.499 * math.pi, 0.001 * math.pi)),
+            entities.Warior(2, (0.498 * math.pi, 0.002 * math.pi)),
+            entities.Rocks(3, (0.497 * math.pi, 0.003 * math.pi)),
         ]
 
-        return State(elevation_function, entities)
+        return State(elevation_function, entity_list)
 

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from . import actions, animator, engine, events
+from . import actions, animator, defs, engine, events
 
 class Proxy:
     def __init__(self) -> None:
@@ -27,4 +27,7 @@ class Proxy:
 
     def stop_moving(self) -> None:
         self.send_event(events.StopMovingEvent())
+
+    def activate_hand(self, hand: defs.Hand, item_id: defs.ActorId) -> None:
+        self.send_event(events.HandActivationEvent(hand, item_id))
 

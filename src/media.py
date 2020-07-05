@@ -4,7 +4,11 @@ from OpenGL import GL
 
 from typing import Any, Iterable
 
-IMAGE_NAMES = ('grass', 'water', 'hero', 'warior')
+IMAGE_NAMES = ('axe', 'grass', 'water', 'hero', 'warior', 'rocks')
+
+
+def format_image_name(image_name: str) -> str:
+    return f'res/images/{image_name}.png'
 
 
 class Textures:
@@ -12,7 +16,7 @@ class Textures:
         self._images = { image_name: self._load_texture(image_name) for image_name in image_names }
 
     def _load_texture(self, image_name: str) -> int:
-        image = pyglet.image.load(f'res/images/{image_name}.png')
+        image = pyglet.image.load(format_image_name(image_name))
         texture = GL.glGenTextures(1)
         GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
@@ -28,6 +32,7 @@ class Textures:
 
     def __getattr__(self, key) -> int:
         return self._images[key]
+
 
 class Media:
     def __init__(self) -> None:

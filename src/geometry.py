@@ -217,7 +217,7 @@ class Coordinates:
 ####################################################################################################
 
 class Coordinate:
-    """Position expressed in geographical coordinates with degrees."""
+    """Position expressed in geographical coordinates with radians."""
 
     def __init__(self, lat, lon) -> None:
         self.lat = lat
@@ -231,6 +231,11 @@ class Coordinate:
             sin(self.lat) * cos(other.lat) * cos(other.lon - self.lon)
 
         return atan2(x, y)
+
+    def great_circle_distance_to(self, other: 'Coordinate', radius: float) -> float:
+        sin1 = sin(0.5 * abs(self.lat - other.lat))
+        sin2 = sin(0.5 * abs(self.lon - other.lon))
+        return 2 * radius * asin(sqrt(sin1 * sin1 + cos(self.lat) * cos(other.lat) * sin2 * sin2))
 
     def moved_by(self, distance, bearing, radius) -> 'Coordinate':
         angular_distance = distance / radius
@@ -268,6 +273,11 @@ class Point:
         coord1 = self.to_coordinate()
         coord2 = other.to_coordinate()
         return coord1.bearing_to(coord2)
+
+    def great_circle_distance_to(self, other: 'Point', radius: float) -> float:
+        coord1 = self.to_coordinate()
+        coord2 = other.to_coordinate()
+        return coord1.great_circle_distance_to(coord2, radius)
 
     def moved_by(self, distance, bearing, radius) -> 'Point':
         return self.to_coordinate().moved_by(distance, bearing, radius).to_point()

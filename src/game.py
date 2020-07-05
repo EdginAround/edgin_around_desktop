@@ -55,6 +55,12 @@ class Window(pyglet.window.Window):
     def on_mouse_motion(self, x, y, dx, dy):
         self.world.highlight(x, y)
 
+    def on_mouse_press(self, x, y, button, modifiers):
+        self.controls.handle_mouse_press(x, y, button, modifiers)
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        self.controls.handle_mouse_release(x, y, button, modifiers)
+
     def on_close(self):
         super().on_close()
         self.runner.stop()

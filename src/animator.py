@@ -2,14 +2,14 @@ import pyglet, time
 
 from typing import Dict, List
 
-from . import animations, dials, scene
+from . import animations, defs, dials, scene
 
 class Animator:
     def __init__(self, _scene: scene.Scene, _dials: dials.Dials) -> None:
         self.scene = _scene
         self.dials = _dials
         self.general_animations: List[animations.Animation] = list()
-        self.actor_animations: Dict[scene.ActorId, animations.Animation] = dict()
+        self.actor_animations: Dict[defs.ActorId, animations.Animation] = dict()
         self.prev_tick = time.monotonic()
 
     def animate(self) -> None:
@@ -36,7 +36,7 @@ class Animator:
             self.general_animations.append(animation)
 
     def _remove_expired_animations(self) -> None:
-        expired: List[scene.ActorId] = list()
+        expired: List[defs.ActorId] = list()
 
         for actor_id, animation in self.actor_animations.items():
             if animation.expired():
