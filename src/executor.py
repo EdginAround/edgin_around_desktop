@@ -1,9 +1,15 @@
 import heapq, threading, time
 
-from typing import List
+from abc import abstractmethod
+from typing import List, Optional
+
+
+JobHandle = Optional[int]
+
 
 class Event():
-    def __init__(self, moment, kwargs):
+    def __init__(self, handle: JobHandle, moment: float, kwargs):
+        self.handle = handle
         self.moment = moment
         self.kwargs = kwargs
 
@@ -19,15 +25,37 @@ class Scheduler:
         self._queue: List[Event] = list()
         self._lock = threading.RLock()
 
-    def enter(self, delay: float, **kwargs) -> None:
+    def enter(self, handle: JobHandle, delay: float, **kwargs) -> None:
+        """Schedules next callback.
+
+        handle - Identifier of the callback. Pass to `cancel` method to cancel the callback.
+            The handle does not have to be unique. If you want to ensure uniqness, use `cancel`
+            before to remove old jobs.
+        delay - time interval in seconds to wait before executing the job.
+        kwargs - parameters passed to the callback.
+        """
+
         moment = time.monotonic() + delay
-        event = Event(moment, kwargs)
+        event = Event(handle, moment, kwargs)
         with self._lock:
             heapq.heappush(self._queue, event)
 
+    def cancel(self, handle: int):
+        with self._lock:
+            self._queue[:] = [e for e in self._queue if e.handle != handle]
+            heapq.heapify(self._queue)
+
+
+class Processor:
+    @abstractmethod
+    def start(self, scheduler: Scheduler) -> None: pass
+
+    @abstractmethod
+    def run(self, handle: Optional[int], **kwargs) -> None: pass
+
 
 class Runner:
-    def __init__(self, processor) -> None:
+    def __init__(self, processor: Processor) -> None:
         def target() -> None:
             scheduler = Scheduler()
             processor.start(scheduler)
@@ -35,10 +63,14 @@ class Runner:
                 with scheduler._lock:
                     if len(scheduler._queue) < 1: break
                     event = scheduler._queue[0]
-                    heapq.heappop(scheduler._queue)
+                    delay = event.moment - time.monotonic()
+                    if delay < 0:
+                        heapq.heappop(scheduler._queue)
 
-                time.sleep(max(event.moment - time.monotonic(), 0.0))
-                processor.run(**event.kwargs)
+                if delay < 0:
+                    processor.run(event.handle, **event.kwargs)
+                else:
+                    time.sleep(delay)
 
         self._event = threading.Event()
         self._thread = threading.Thread(target=target)

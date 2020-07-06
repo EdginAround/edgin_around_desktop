@@ -1,7 +1,7 @@
 import pyglet
 import glooey
 
-from . import animator, controls, dials, engine, executor, proxy, scene, state, world
+from . import animator, controls, dials, engine, executor, generator, proxy, scene, world
 
 
 class Gui(glooey.Gui):
@@ -27,7 +27,7 @@ class Window(pyglet.window.Window):
         self.gui = Gui(self)
         self.gui.add(self.dials)
 
-        self.state = state.WorldGenerator().generate(100.0)
+        self.state = generator.WorldGenerator().generate(100.0)
         self.engine = engine.Engine(self.proxy, self.state)
 
         self.runner = executor.Runner(self.engine)

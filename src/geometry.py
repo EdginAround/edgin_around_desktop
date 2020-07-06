@@ -2,6 +2,128 @@ import numpy
 
 from math import asin, atan2, cos, degrees, pi, radians, sin, sqrt, tan
 
+from typing import Callable, List
+
+####################################################################################################
+
+class Coordinates:
+    @staticmethod
+    def cartesian_to_spherical(x, y, z):
+        r = sqrt(x * x + y * y + z * z)
+        theta = atan2(sqrt(x * x + z * z), y) if y != 0.0 else 0.5 * pi
+        phi = atan2(x, z) if z != 0.0 else 0.5 * pi
+        return r, theta, phi
+
+    @staticmethod
+    def cartesian_to_geographical_radians(x, y, z):
+        coords = Coordinates.cartesian_to_spherical(x, y, z)
+        return Coordinates.spherical_to_geographical_radians(*coords)
+
+    @staticmethod
+    def cartesian_to_geographical_degrees(x, y, z):
+        coords = Coordinates.cartesian_to_spherical(x, y, z)
+        return Coordinates.spherical_to_geographical_degrees(*coords)
+
+    @staticmethod
+    def spherical_to_cartesian(r, theta, phi):
+        z = r * sin(theta) * cos(phi)
+        x = r * sin(theta) * sin(phi)
+        y = r * cos(theta)
+        return x, y, z
+
+    @staticmethod
+    def spherical_to_geographical_radians(r, theta, phi):
+        lat = 0.5 * pi - theta
+        lon = phi if phi <= pi else phi - 2.0 * pi
+        return r, lat, lon
+
+    @staticmethod
+    def spherical_to_geographical_degrees(r, theta, phi):
+        r, lat, lon = Coordinates.spherical_to_geographical_radians(r, theta, phi)
+        return r, degrees(lat), degrees(lon)
+
+    @staticmethod
+    def geographical_radians_to_spherical(r, lat, lon):
+        theta = 0.5 * pi - lat
+        phi = lon if lon >= 0 else lon + 2.0 * pi
+        return r, theta, phi
+
+    @staticmethod
+    def geographical_degrees_to_spherical(r, lat, lon):
+        return Coordinates.geographical_radians_to_spherical(r, radians(lat), radians(lon))
+
+####################################################################################################
+
+class Coordinate:
+    """Position expressed in geographical coordinates with radians."""
+
+    def __init__(self, lat, lon) -> None:
+        self.lat = lat
+        self.lon = lon
+
+    def bearing_to(self, other: 'Coordinate') -> float:
+        """Calculates bearing between two coordinates."""
+
+        x = sin(other.lon - self.lon) * cos(other.lat)
+        y = cos(self.lat) * sin(other.lat) - \
+            sin(self.lat) * cos(other.lat) * cos(other.lon - self.lon)
+
+        return atan2(x, y)
+
+    def great_circle_distance_to(self, other: 'Coordinate', radius: float) -> float:
+        sin1 = sin(0.5 * abs(self.lat - other.lat))
+        sin2 = sin(0.5 * abs(self.lon - other.lon))
+        return 2 * radius * asin(sqrt(sin1 * sin1 + cos(self.lat) * cos(other.lat) * sin2 * sin2))
+
+    def moved_by(self, distance, bearing, radius) -> 'Coordinate':
+        angular_distance = distance / radius
+        cad = cos(angular_distance)
+        sad = sin(angular_distance)
+
+        cb = cos(bearing)
+        sb = sin(bearing)
+
+        slat1 = sin(self.lat)
+        clat1 = cos(self.lat)
+
+        lat2 = asin(slat1 * cad + clat1 * sad * cb)
+        slat2 = sin(lat2)
+        lon2 = self.lon + atan2(sb * sad * clat1, cad - slat1 * slat2)
+
+        return Coordinate(lat2, lon2)
+
+    def to_point(self) -> 'Point':
+        r, theta, phi = Coordinates.geographical_radians_to_spherical(1.0, self.lat, self.lon)
+        return Point(theta, phi)
+
+####################################################################################################
+
+class Point:
+    """Position expressed in spherical coordinates."""
+
+    def __init__(self, theta, phi) -> None:
+        self.theta = theta
+        self.phi = phi
+
+    def bearing_to(self, other: 'Point') -> float:
+        """Calculates bearing between two points expressed in spherical coordinates."""
+
+        coord1 = self.to_coordinate()
+        coord2 = other.to_coordinate()
+        return coord1.bearing_to(coord2)
+
+    def great_circle_distance_to(self, other: 'Point', radius: float) -> float:
+        coord1 = self.to_coordinate()
+        coord2 = other.to_coordinate()
+        return coord1.great_circle_distance_to(coord2, radius)
+
+    def moved_by(self, distance, bearing, radius) -> 'Point':
+        return self.to_coordinate().moved_by(distance, bearing, radius).to_point()
+
+    def to_coordinate(self) -> Coordinate:
+        r, lat, lon = Coordinates.spherical_to_geographical_radians(1.0, self.theta, self.phi)
+        return Coordinate(lat, lon)
+
 ####################################################################################################
 
 class Polyhedron:
@@ -28,10 +150,10 @@ class Polyhedron:
     def get_vertex(self, index):
         return self.vertices[index], self.colors[index]
 
-    def rescale(self, stretch):
+    def rescale(self, stretch: Callable[[Point], float]):
         for i, vertex in enumerate(self.vertices):
             r, theta, phi = Coordinates.cartesian_to_spherical(*vertex)
-            multiplier = stretch(theta, phi) / r
+            multiplier = stretch(Point(theta, phi)) / r
             self.vertices[i] = [v * multiplier for v in vertex]
 
 ####################################################################################################
@@ -168,156 +290,35 @@ class Matrices:
 
 ####################################################################################################
 
-class Coordinates:
-    @staticmethod
-    def cartesian_to_spherical(x, y, z):
-        r = sqrt(x * x + y * y + z * z)
-        theta = atan2(sqrt(x * x + z * z), y) if y != 0.0 else 0.5 * pi
-        phi = atan2(x, z) if z != 0.0 else 0.5 * pi
-        return r, theta, phi
-
-    @staticmethod
-    def cartesian_to_geographical_radians(x, y, z):
-        coords = Coordinates.cartesian_to_spherical(x, y, z)
-        return Coordinates.spherical_to_geographical_radians(*coords)
-
-    @staticmethod
-    def cartesian_to_geographical_degrees(x, y, z):
-        coords = Coordinates.cartesian_to_spherical(x, y, z)
-        return Coordinates.spherical_to_geographical_degrees(*coords)
-
-    @staticmethod
-    def spherical_to_cartesian(r, theta, phi):
-        z = r * sin(theta) * cos(phi)
-        x = r * sin(theta) * sin(phi)
-        y = r * cos(theta)
-        return x, y, z
-
-    @staticmethod
-    def spherical_to_geographical_radians(r, theta, phi):
-        lat = 0.5 * pi - theta
-        lon = phi if phi <= pi else phi - 2.0 * pi
-        return r, lat, lon
-
-    @staticmethod
-    def spherical_to_geographical_degrees(r, theta, phi):
-        r, lat, lon = Coordinates.spherical_to_geographical_radians(r, theta, phi)
-        return r, degrees(lat), degrees(lon)
-
-    @staticmethod
-    def geographical_radians_to_spherical(r, lat, lon):
-        theta = 0.5 * pi - lat
-        phi = lon if lon >= 0 else lon + 2.0 * pi
-        return r, theta, phi
-
-    @staticmethod
-    def geographical_degrees_to_spherical(r, lat, lon):
-        return Coordinates.geographical_radians_to_spherical(r, radians(lat), radians(lon))
-
-####################################################################################################
-
-class Coordinate:
-    """Position expressed in geographical coordinates with radians."""
-
-    def __init__(self, lat, lon) -> None:
-        self.lat = lat
-        self.lon = lon
-
-    def bearing_to(self, other: 'Coordinate') -> float:
-        """Calculates bearing between two coordinates."""
-
-        x = sin(other.lon - self.lon) * cos(other.lat)
-        y = cos(self.lat) * sin(other.lat) - \
-            sin(self.lat) * cos(other.lat) * cos(other.lon - self.lon)
-
-        return atan2(x, y)
-
-    def great_circle_distance_to(self, other: 'Coordinate', radius: float) -> float:
-        sin1 = sin(0.5 * abs(self.lat - other.lat))
-        sin2 = sin(0.5 * abs(self.lon - other.lon))
-        return 2 * radius * asin(sqrt(sin1 * sin1 + cos(self.lat) * cos(other.lat) * sin2 * sin2))
-
-    def moved_by(self, distance, bearing, radius) -> 'Coordinate':
-        angular_distance = distance / radius
-        cad = cos(angular_distance)
-        sad = sin(angular_distance)
-
-        cb = cos(bearing)
-        sb = sin(bearing)
-
-        slat1 = sin(self.lat)
-        clat1 = cos(self.lat)
-
-        lat2 = asin(slat1 * cad + clat1 * sad * cb)
-        slat2 = sin(lat2)
-        lon2 = self.lon + atan2(sb * sad * clat1, cad - slat1 * slat2)
-
-        return Coordinate(lat2, lon2)
-
-    def to_point(self) -> 'Point':
-        r, theta, phi = Coordinates.geographical_radians_to_spherical(1.0, self.lat, self.lon)
-        return Point(theta, phi)
-
-####################################################################################################
-
-class Point:
-    """Position expressed in spherical coordinates."""
-
-    def __init__(self, theta, phi) -> None:
-        self.theta = theta
-        self.phi = phi
-
-    def bearing_to(self, other: 'Point') -> float:
-        """Calculates bearing between two points expressed in spherical coordinates."""
-
-        coord1 = self.to_coordinate()
-        coord2 = other.to_coordinate()
-        return coord1.bearing_to(coord2)
-
-    def great_circle_distance_to(self, other: 'Point', radius: float) -> float:
-        coord1 = self.to_coordinate()
-        coord2 = other.to_coordinate()
-        return coord1.great_circle_distance_to(coord2, radius)
-
-    def moved_by(self, distance, bearing, radius) -> 'Point':
-        return self.to_coordinate().moved_by(distance, bearing, radius).to_point()
-
-    def to_coordinate(self) -> Coordinate:
-        r, lat, lon = Coordinates.spherical_to_geographical_radians(1.0, self.theta, self.phi)
-        return Coordinate(lat, lon)
-
-####################################################################################################
-
 class Boundary2D:
-    def __init__(self, left, bottom, right, top):
+    def __init__(self, left: float, bottom: float, right: float, top: float) -> None:
         self.left = left
         self.bottom = bottom
         self.right = right
         self.top = top
 
-    def contains(self, x, y):
+    def contains(self, x: float, y: float) -> bool:
         return self.left < x and x < self.right and self.bottom < y and y < self.top
 
 ####################################################################################################
 
 class ElevationFunction:
-    def __init__(self, radius):
+    def __init__(self, radius: float) -> None:
         self.radius = radius
-        self.functions = list()
+        self.functions: List[Callable[[Point], float]] = list()
 
-    def add(self, function):
+    def add(self, function: Callable[[Point], float]) -> None:
         self.functions.append(function)
 
     def get_radius(self) -> float:
         return self.radius
 
-    def evaluate_without_radius(self, theta, phi):
-        return sum(f(theta, phi) for f in self.functions)
+    def evaluate_without_radius(self, position: Point) -> float:
+        return sum(f(position) for f in self.functions)
 
-    def evaluate_with_radius(self, theta, phi):
-        return self.radius + self.evaluate_without_radius(theta, phi)
+    def evaluate_with_radius(self, position: Point) -> float:
+        return self.radius + self.evaluate_without_radius(position)
 
-    def __call__(self, lat, lon):
-        return self.evaluate_with_radius(lat, lon)
-
+    def __call__(self, position: Point) -> float:
+        return self.evaluate_with_radius(position)
 

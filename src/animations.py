@@ -2,7 +2,7 @@ import time
 
 from typing import Iterable, List, Optional
 
-from . import defs, dials, inventory, scene
+from . import defs, dials, geometry, inventory, scene
 
 
 class Animation:
@@ -65,11 +65,17 @@ class DeleteActorsAnimation(Animation):
 
 
 class MovementAnimation(Animation):
-    def __init__(self, timeout, actor_id: defs.ActorId, bearing, speed) -> None:
+    def __init__(
+            self,
+            actor_id: defs.ActorId,
+            speed: float,
+            bearing: float,
+            timeout: float,
+        ) -> None:
         super().__init__(timeout)
         self.actor_id = actor_id
-        self.bearing = bearing
         self.speed = speed
+        self.bearing = bearing
 
     def get_actor_id(self) -> defs.ActorId:
         return self.actor_id
@@ -81,14 +87,18 @@ class MovementAnimation(Animation):
 
 
 class LocalizeAnimation(Animation):
-    def __init__(self, actor_id: defs.ActorId) -> None:
+    def __init__(self, actor_id: defs.ActorId, position: geometry.Point) -> None:
         super().__init__(None)
         self.actor_id = actor_id
+        self.position = position
 
     def get_actor_id(self) -> defs.ActorId:
         return self.actor_id
 
     def tick(self, tick_interval, scene: scene.Scene, dials: dials.Dials) -> None:
+        actor = scene.get_actor(self.actor_id)
+        if actor is not None:
+            actor.set_position(self.position)
         self.expire()
 
 

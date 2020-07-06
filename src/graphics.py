@@ -4,6 +4,8 @@ import ctypes
 
 from OpenGL import GL
 
+from typing import Optional
+
 from . import geometry
 
 
@@ -62,10 +64,10 @@ class PlainRenderer:
 
         self.highlight = False
 
-        self.cam_left = None
-        self.cam_bottom = None
-        self.cam_right = None
-        self.cam_top = None
+        self.cam_left: Optional[float] = None
+        self.cam_bottom: Optional[float] = None
+        self.cam_right: Optional[float] = None
+        self.cam_top: Optional[float] = None
         self.cam_dist = 0.0
 
         self.vbo = GL.glGenBuffers(1)
@@ -123,6 +125,10 @@ class PlainRenderer:
         self.cam_dist = left_bottom[2] / left_bottom[3]
 
     def get_boundary(self) -> geometry.Boundary2D:
+        assert self.cam_left is not None
+        assert self.cam_bottom is not None
+        assert self.cam_right is not None
+        assert self.cam_top is not None
         return geometry.Boundary2D(self.cam_left, self.cam_bottom, self.cam_right, self.cam_top)
 
     def _load_vertices(self) -> None:

@@ -55,35 +55,36 @@ class DeleteActorsAction(Action):
 
 
 class MovementAction(Action):
-    def __init__(self, actor_id, duration, bearing, speed) -> None:
+    def __init__(self, actor_id, speed: float, bearing: float, duration: float) -> None:
         super().__init__()
         self.actor_id = actor_id
-        self.duration = duration
-        self.bearing = bearing
         self.speed = speed
+        self.bearing = bearing
+        self.duration = duration
 
     def __str__(self) -> str:
-        return f'MovementAction(actor_id={self.actor_id}, duration={self.duration},' \
-            ' bearing={self.bearing}, speed={self.speed})'
+        return f'MovementAction(actor_id={self.actor_id}, speed={self.speed}, ' \
+            f'bearing={self.bearing}, duration={self.duration})'
 
     def into_animation(self) -> animations.MovementAnimation:
         return animations.MovementAnimation(
-                self.duration,
                 self.actor_id,
-                self.bearing,
                 self.speed,
+                self.bearing,
+                self.duration,
             )
 
 class LocalizeAction(Action):
-    def __init__(self, actor_id: defs.ActorId) -> None:
+    def __init__(self, actor_id: defs.ActorId, position: geometry.Point) -> None:
         super().__init__()
         self.actor_id = actor_id
+        self.position = position
 
     def __str__(self) -> str:
-        return f'LocalizeAction(actor_id={self.actor_id})'
+        return f'LocalizeAction(actor_id={self.actor_id}, position={self.position})'
 
     def into_animation(self) -> animations.LocalizeAnimation:
-        return animations.LocalizeAnimation(self.actor_id)
+        return animations.LocalizeAnimation(self.actor_id, self.position)
 
 
 class StatUpdateAction(Action):

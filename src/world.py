@@ -36,10 +36,10 @@ class World:
     def get_highlight_actor_id(self) -> Optional[defs.ActorId]:
         return self.highlight_actor_id
 
-    def set_lookat(self, theta, phi) -> None:
-        self.theta = theta
-        self.phi = phi
-        self.elevation = self.scene.get_elevation(theta, phi)
+    def set_lookat(self, position: geometry.Point) -> None:
+        self.theta = position.theta
+        self.phi = position.phi
+        self.elevation = self.scene.get_elevation(position)
 
     def move(self, right_left, front_back) -> None:
         # Calculate current heading
@@ -53,7 +53,7 @@ class World:
         r, self.theta, self.phi = geometry.Coordinates.cartesian_to_spherical(*new)
 
         # Update `elevation`
-        self.elevation = self.scene.get_elevation(self.theta, self.phi)
+        self.elevation = self.scene.get_elevation(geometry.Point(self.theta, self.phi))
 
         # Update `bearing`
         new_forward = numpy.array((*new, 1.0)).reshape(4, 1) + forward
@@ -162,7 +162,7 @@ class World:
 
     def _load_data(self) -> None:
         self.radius = self.scene.get_radius()
-        self.elevation = self.scene.get_elevation(self.theta, self.phi)
+        self.elevation = self.scene.get_elevation(geometry.Point(self.theta, self.phi))
 
         self.media.load_textures()
 
@@ -172,11 +172,11 @@ class World:
         self.renderer_ground = graphics.SolidPolyhedronRenderer(figure, self.media.tex.grass)
 
         self.renderers_entities = [graphics.PlainRenderer(
-                self.scene.get_elevation(actor.theta, actor.phi, with_radius=True),
-                actor.theta, actor.phi, self.bearing,
+                self.scene.get_elevation(actor.position, with_radius=True),
+                actor.position.theta, actor.position.phi, self.bearing,
                 self.media.tex[actor.texture_name],
                 actor.id,
-            ) for actor in self.scene.get_actors()]
+            ) for actor in self.scene.get_actors() if actor.position is not None]
 
     def _refresh_projection(self):
         self.projection = \
@@ -212,7 +212,7 @@ class World:
 
     def _draw(self) -> None:
         # Get hero position
-        self.set_lookat(*self.scene.get_hero_position())
+        self.set_lookat(self.scene.get_hero_position())
 
         # Refresh trnasformation
         self._refresh_projection()
@@ -230,11 +230,12 @@ class World:
         mvp = self.projection @ self.view
         for renderer in self.renderers_entities:
             actor = self.scene.get_actor(renderer.actor_id)
-            renderer.change_position(
-                    self.scene.get_elevation(actor.theta, actor.phi, with_radius=True),
-                    actor.theta, actor.phi,
-                    self.bearing)
-            renderer.calculate_screen_bounds(mvp)
+            if actor.position is not None:
+                renderer.change_position(
+                        self.scene.get_elevation(actor.position, with_radius=True),
+                        actor.position.theta, actor.position.phi,
+                        self.bearing)
+                renderer.calculate_screen_bounds(mvp)
         self.renderers_entities.sort(key=graphics.PlainRenderer.get_camera_distance)
 
         # Find an entity with cursor focus

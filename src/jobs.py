@@ -1,6 +1,27 @@
+import time
+
 from typing import List, Optional
 
 from . import actions, defs, essentials, events, state
+
+
+class WaitJob(essentials.Job):
+    def __init__(self, duration: float, repeat: Optional[events.Event]) -> None:
+        super().__init__()
+        self.duration = duration
+        self.repeat = repeat
+
+    def get_start_delay(self) -> float:
+        return self.duration
+
+    def execute(self, entity: essentials.Entity, state: state.State) -> essentials.JobResult:
+        return essentials.JobResult(list(), self.repeat)
+
+    def __str__(self) -> str:
+        return f'WaitJob(duration={self.duration}, repeat={self.repeat})'
+
+    def __eq__(self, other) -> bool:
+        return type(self) == type(other) and self.duration == other.duration
 
 
 class HungerDrainJob(essentials.Job):
@@ -12,7 +33,7 @@ class HungerDrainJob(essentials.Job):
     def get_start_delay(self) -> float:
         return self.INTERVAL
 
-    def perform(self, entity: essentials.Entity, state: state.State) -> essentials.JobResult:
+    def execute(self, entity: essentials.Entity, state: state.State) -> essentials.JobResult:
         if entity.features.eater is None:
             return essentials.JobResult(list(), None)
 
@@ -25,75 +46,44 @@ class HungerDrainJob(essentials.Job):
         return f'HungerDrainJob()'
 
     def __eq__(self, other) -> bool:
-        return True
+        return type(self) == type(other)
 
 
 class MovementJob(essentials.Job):
-    def __init__(self, duration: float, repeat: Optional[events.Event]) -> None:
-        super().__init__()
-        self.duration = duration
-        self.repeat = repeat
-
-    def get_start_delay(self) -> float:
-        return self.duration
-
-    def perform(self, entity: essentials.Entity, state: state.State) -> essentials.JobResult:
-        return essentials.JobResult(list(), self.repeat)
-
-    def __str__(self) -> str:
-        return f'MovementJob(duration={self.duration}, repeat={self.repeat})'
-
-    def __eq__(self, other) -> bool:
-        return self.duration == other.duration \
-           and self.repeat == other.repeat
-
-
-class PickItemJob(essentials.Job):
-    MAX_DISTANCE = 1.5 # XXX
+    INTERVAL = 0.1 # second
 
     def __init__(
             self,
-            who: essentials.EntityId,
-            what: essentials.EntityId,
-            hand: defs.Hand,
+            speed: float,
+            bearing: float,
             duration: float,
+            finish_event: Optional[events.Event],
         ) -> None:
         super().__init__()
-        self.who = who
-        self.what = what
-        self.hand = hand
+        self.speed = speed
+        self.bearing = bearing
         self.duration = duration
+        self.finish_event = finish_event
+        self.start_time = time.monotonic()
 
     def get_start_delay(self) -> float:
-        return self.duration
+        return self.INTERVAL
 
-    def perform(self, entity: essentials.Entity, state: state.State) -> essentials.JobResult:
-        noop = essentials.JobResult(list(), None)
+    def execute(self, entity: essentials.Entity, state: state.State) -> essentials.JobResult:
+        entity.move_by(self.speed * self.INTERVAL, self.bearing, state.get_radius())
 
-        item = state.get_entity(self.what)
-        if item is None:
-            return noop
-
-        if self.MAX_DISTANCE < state.get_distance(entity, item):
-            return noop
-
-        if not entity.features.inventory or not item.features.inventorable:
-            return noop
-
-        entity.features.inventory.store(self.hand, item.get_id(), item.get_name())
-        item.features.inventorable.set_stored_by(entity.get_id())
-        item.position = None
-
-        action_list = [
-                actions.PickEndAction(who=self.who, what=self.what),
-                actions.UpdateInventoryAction(entity.features.inventory.get()),
-                actions.DeleteActorsAction([self.what]),
-            ]
-        return essentials.JobResult(action_list, None)
+        now = time.monotonic()
+        if self.start_time + self.duration < now:
+            return essentials.JobResult(list(), self.finish_event)
+        else:
+            return essentials.JobResult(list(), self.INTERVAL)
 
     def __str__(self) -> str:
-        return f'PickItemJob(who={self.who}, what={self.what}, duration={self.duration})'
+        return f'MovementJob(speed={self.speed}, bearing={self.bearing}, duration={self.duration})'
 
     def __eq__(self, other) -> bool:
-        return self.duration == other.duration
+        return type(self) == type(other) \
+           and self.speed == other.speed \
+           and self.bearing == other.bearing \
+           and self.duration == other.duration
 

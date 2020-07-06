@@ -43,7 +43,7 @@ class WorldTest(unittest.TestCase):
         step = (0.001 * pi, 0.0)
 
         w = world.World(self.scene)
-        w.set_lookat(0.25 * pi, 0.0)
+        w.set_lookat(geometry.Point(0.25 * pi, 0.0))
         self.assertEqual(w.theta, 0.25 * pi)
         self.assertEqual(w.phi, 0.0)
         self.assertEqual(w.bearing, 0.0)
@@ -83,7 +83,7 @@ class WorldTest(unittest.TestCase):
         step = (-0.001 * pi, 0.0)
 
         w = world.World(self.scene)
-        w.set_lookat(0.75 * pi, 0.0)
+        w.set_lookat(geometry.Point(0.75 * pi, 0.0))
         self.assertEqual(w.theta, 0.75 * pi)
         self.assertEqual(w.phi, 0.0)
         self.assertEqual(w.bearing, 0.0)
@@ -155,7 +155,7 @@ class WorldTest(unittest.TestCase):
         step_right = (0.001 * pi, 0.0)
 
         w = world.World(self.scene)
-        w.set_lookat(0.25 * pi, 0.0)
+        w.set_lookat(geometry.Point(0.25 * pi, 0.0))
         self.assertEqual(w.theta, 0.25 * pi)
         self.assertEqual(w.phi, 0.0)
         self.assertEqual(w.bearing, 0.0)

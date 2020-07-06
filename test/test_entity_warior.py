@@ -1,34 +1,41 @@
 import unittest
 
-from src import actions, entities, events, jobs
+from src import actions, entities, events, generator, geometry, jobs
 
 class WariorTest(unittest.TestCase):
     def test_walking(self):
         id = 0
         bearing = 0.0
+        interval = 0.1
         duration = 1.0
         speed = 1.0
 
-        warior = entities.Warior(id, position=(0.0, 0.0))
+        warior = entities.Warior(id, position=geometry.Point(0.0, 0.0))
 
-        result = warior.handle_event(events.ResumeEvent())
-        self.assertIs(result.final_action, None)
-        # Bearing is generated randomly. No need to check it.
-        result.next_action.bearing = bearing
-        result.next_job.bearing = bearing
-        self.assertEqual(result.next_job, jobs.MovementJob(duration, events.FinishedEvent()))
-        self.assertEqual(result.next_job.get_start_delay(), duration)
-        self.assertEqual(result.next_action, actions.MovementAction(id, duration, bearing, speed))
+        world = generator.WorldGenerator().generate_basic(100.0)
+        world.entities = {id: warior}
 
-        result = result.next_job.perform(warior)
-        self.assertEqual(result.action, None)
-        self.assertEqual(result.repeat, events.FinishedEvent())
+        for i, event in enumerate([events.ResumeEvent(), events.FinishedEvent()]):
+            old_task = warior.get_task()
+            warior.handle_event(event)
+            new_task = warior.get_task()
+            self.assertIsNot(old_task, new_task)
 
-        result = warior.handle_event(events.FinishedEvent())
-        self.assertIs(result.final_action, None)
-        result.next_action.bearing = bearing
-        result.next_job.bearing = bearing
-        self.assertEqual(result.next_job, jobs.MovementJob(duration, events.FinishedEvent()))
-        self.assertEqual(result.next_job.get_start_delay(), duration)
-        self.assertEqual(result.next_action, actions.MovementAction(id, duration, bearing, speed))
+            final_actions = old_task.finish(world)
+            if i == 0:
+                self.assertEqual(len(final_actions), 0)
+            else:
+                self.assertEqual(len(final_actions), 1)
+                self.assertTrue(isinstance(final_actions[0], actions.LocalizeAction))
+
+            start_actions = new_task.start(world)
+            job = new_task.get_job()
+            self.assertEqual(len(start_actions), 1)
+            # Bearing is generated randomly. No need to check it.
+            start_actions[0].bearing = bearing
+            job.bearing = bearing
+            expected_job = jobs.MovementJob(speed, bearing, duration, events.FinishedEvent())
+            self.assertEqual(job, expected_job)
+            self.assertEqual(job.get_start_delay(), interval)
+            self.assertEqual(start_actions, [actions.MovementAction(id, duration, bearing, speed)])
 
