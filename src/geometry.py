@@ -124,6 +124,9 @@ class Point:
         r, lat, lon = Coordinates.spherical_to_geographical_radians(1.0, self.theta, self.phi)
         return Coordinate(lat, lon)
 
+    def __str__(self) -> str:
+        return f'Point(theta={self.theta}, phi={self.phi})'
+
 ####################################################################################################
 
 class Polyhedron:

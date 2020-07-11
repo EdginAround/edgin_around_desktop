@@ -4,29 +4,35 @@ import time
 from math import pi
 
 from abc import abstractmethod
-from typing import List, Optional, Union, TYPE_CHECKING
+from typing import List, Optional, Union, Tuple, TYPE_CHECKING
 
 from . import actions, defs, events, features, geometry
 if TYPE_CHECKING: from . import state
 
 
 EntityId = int
+EntityPosition = Union[geometry.Point, Tuple[float, float]]
 
 
-class JobResult:
+class JobResult(defs.Debugable):
+    DEBUG_FIELDS = ['events', 'actions', 'repeat']
+
     def __init__(
             self,
-            actions: List[actions.Action],
-            repeat: Union[float, events.Event, None],
+            events: List[events.Event] = list(),
+            actions: List[actions.Action] = list(),
+            repeat: Optional[float] = None,
     ) -> None:
+        self.events = events
         self.actions = actions
         self.repeat = repeat
 
 
-class Job:
+class Job(defs.Debugable):
     def __init__(self) -> None:
         self._num_calls = 0
         self._prev_call_time = time.monotonic()
+        self._conclude = False
 
     def get_num_calls(self) -> int:
         return self._num_calls
@@ -34,8 +40,14 @@ class Job:
     def get_prev_call_time(self) -> float:
         return self._prev_call_time
 
-    def perform(self, entity: 'Entity', state: 'state.State') -> JobResult:
-        result = self.execute(entity, state)
+    def conclude(self) -> None:
+        self._conclude = True
+
+    def should_conclude(self) -> bool:
+        return self._conclude
+
+    def perform(self, state: 'state.State') -> JobResult:
+        result = self.execute(state)
         self._num_calls += 1
         self._prev_call_time = time.monotonic()
         return result
@@ -44,12 +56,16 @@ class Job:
     def get_start_delay(self) -> float: pass
 
     @abstractmethod
-    def execute(self, entity: 'Entity', state: 'state.State') -> JobResult: pass
+    def execute(self, state: 'state.State') -> JobResult: pass
 
 
 class Task:
     def __init__(self) -> None:
-        pass
+        self.job: Optional[Job] = None
+
+    def conclude(self) -> None:
+        if self.job is not None:
+            self.job.conclude()
 
     @abstractmethod
     def start(self, state: 'state.State') -> List[actions.Action]: pass
@@ -76,11 +92,18 @@ class IdleTask(Task):
 
 
 class Entity:
-    def __init__(self, id: defs.ActorId, position: geometry.Point) -> None:
+    def __init__(self, id: defs.ActorId, position: EntityPosition) -> None:
         self.id = id
-        self.position: Optional[geometry.Point] = position
         self.task: Task = IdleTask()
         self.features = features.Features()
+
+        self.position: Optional[geometry.Point]
+        if isinstance(position, geometry.Point):
+            self.position = position
+        elif isinstance(position, tuple):
+            self.position = geometry.Point(*position)
+        else:
+            self.position = None
 
     def get_id(self) -> EntityId:
         return self.id

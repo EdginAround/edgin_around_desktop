@@ -21,8 +21,8 @@ class Window(pyglet.window.Window):
 
         self.dials = dials.Dials()
         self.scene = scene.Scene()
-        self.animator = animator.Animator(self.scene, self.dials)
         self.world = world.World(self.scene)
+        self.animator = animator.Animator(self.scene, self.world, self.dials)
         self.controls = controls.Controls(self.world, self.proxy)
         self.gui = Gui(self)
         self.gui.add(self.dials)

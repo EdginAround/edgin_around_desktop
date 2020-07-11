@@ -4,7 +4,7 @@ import glooey
 from . import defs, inventory, media
 
 
-INVENTORY_IMAGES = ('left_hand', 'right_hand', 'axe', 'rocks')
+INVENTORY_IMAGES = ('left_hand', 'right_hand', 'axe', 'rocks', 'log')
 LEFT_HAND = 'left_hand'
 RIGHT_HAND = 'right_hand'
 

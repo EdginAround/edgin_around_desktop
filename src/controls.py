@@ -9,6 +9,11 @@ from typing import Callable, Dict, Optional, Tuple
 
 from . import defs, proxy, world
 
+
+PlainCallbackDict = Dict[Tuple[int, int], Callable[[], None]]
+IntervalCallbackDict = Dict[Tuple[int, int], Callable[[float], None]]
+
+
 class Controls:
     MOD_MASK = key.MOD_CTRL | key.MOD_SHIFT
 
@@ -17,18 +22,17 @@ class Controls:
         self.prev_moment: Optional[float] = None
         self.current_symbol_pressed = None
 
-        PlainCallbackDict = Dict[Tuple[int, int], Callable[[], None]]
-        IntervalCallbackDict = Dict[Tuple[int, int], Callable[[float], None]]
-
         self.press_actions: PlainCallbackDict = {
-                (key.A, NOMODS): lambda: proxy.start_moving(world.bearing - 0.5 * pi),
-                (key.D, NOMODS): lambda: proxy.start_moving(world.bearing + 0.5 * pi),
-                (key.S, NOMODS): lambda: proxy.start_moving(world.bearing + 1.0 * pi),
-                (key.W, NOMODS): lambda: proxy.start_moving(world.bearing + 0.0 * pi),
-                (key.LEFT,  NOMODS): lambda: proxy.start_moving(world.bearing - 0.5 * pi),
-                (key.RIGHT, NOMODS): lambda: proxy.start_moving(world.bearing + 0.5 * pi),
-                (key.DOWN,  NOMODS): lambda: proxy.start_moving(world.bearing + 1.0 * pi),
-                (key.UP,    NOMODS): lambda: proxy.start_moving(world.bearing + 0.0 * pi),
+                (key.A, NOMODS): lambda: proxy.send_move(world.bearing - 0.5 * pi),
+                (key.D, NOMODS): lambda: proxy.send_move(world.bearing + 0.5 * pi),
+                (key.S, NOMODS): lambda: proxy.send_move(world.bearing + 1.0 * pi),
+                (key.W, NOMODS): lambda: proxy.send_move(world.bearing + 0.0 * pi),
+                (key.Z, NOMODS): lambda: proxy.send_hand(defs.Hand.LEFT, None),
+                (key.X, NOMODS): lambda: proxy.send_hand(defs.Hand.RIGHT, None),
+                (key.LEFT,  NOMODS): lambda: proxy.send_move(world.bearing - 0.5 * pi),
+                (key.RIGHT, NOMODS): lambda: proxy.send_move(world.bearing + 0.5 * pi),
+                (key.DOWN,  NOMODS): lambda: proxy.send_move(world.bearing + 1.0 * pi),
+                (key.UP,    NOMODS): lambda: proxy.send_move(world.bearing + 0.0 * pi),
                 (key.BRACKETLEFT, NOMODS): lambda: world.tilt_by(-0.1 * pi),
                 (key.BRACKETRIGHT, NOMODS): lambda: world.tilt_by(0.1 * pi),
                 (key.PLUS, NOMODS): lambda: world.zoom_by(5),
@@ -38,14 +42,14 @@ class Controls:
             }
 
         self.release_actions: PlainCallbackDict = {
-                (key.A, NOMODS): lambda: proxy.stop_moving(),
-                (key.D, NOMODS): lambda: proxy.stop_moving(),
-                (key.S, NOMODS): lambda: proxy.stop_moving(),
-                (key.W, NOMODS): lambda: proxy.stop_moving(),
-                (key.LEFT,  NOMODS): lambda: proxy.stop_moving(),
-                (key.RIGHT, NOMODS): lambda: proxy.stop_moving(),
-                (key.DOWN,  NOMODS): lambda: proxy.stop_moving(),
-                (key.UP,    NOMODS): lambda: proxy.stop_moving(),
+                (key.A, NOMODS): lambda: proxy.send_stop(),
+                (key.D, NOMODS): lambda: proxy.send_stop(),
+                (key.S, NOMODS): lambda: proxy.send_stop(),
+                (key.W, NOMODS): lambda: proxy.send_stop(),
+                (key.LEFT,  NOMODS): lambda: proxy.send_stop(),
+                (key.RIGHT, NOMODS): lambda: proxy.send_stop(),
+                (key.DOWN,  NOMODS): lambda: proxy.send_stop(),
+                (key.UP,    NOMODS): lambda: proxy.send_stop(),
             }
 
         self.repeatable_actions: IntervalCallbackDict = {
@@ -82,15 +86,16 @@ class Controls:
             del self.active_actions[key]
 
     def handle_mouse_press(self, x, y, button, modifiers) -> None:
-        pass
-
-    def handle_mouse_release(self, x, y, button, modifiers) -> None:
         if button == pyglet.window.mouse.LEFT:
             if id := self.world.get_highlight_actor_id():
-                self.proxy.activate_hand(defs.Hand.LEFT, id)
+                self.proxy.send_hand(defs.Hand.LEFT, id)
         elif button == pyglet.window.mouse.RIGHT:
             if id := self.world.get_highlight_actor_id():
-                self.proxy.activate_hand(defs.Hand.RIGHT, id)
+                self.proxy.send_hand(defs.Hand.RIGHT, id)
+
+    def handle_mouse_release(self, x, y, button, modifiers) -> None:
+        if button in (pyglet.window.mouse.LEFT, pyglet.window.mouse.RIGHT):
+            self.proxy.send_conclude()
 
     def on_draw(self) -> bool:
         current_moment = time.monotonic()

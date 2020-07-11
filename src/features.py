@@ -1,8 +1,9 @@
 import random
 
+from enum import Enum
 from math import pi
 
-from typing import Optional
+from typing import Final, Iterable, List, Optional, Set
 
 from . import defs, inventory
 
@@ -23,7 +24,7 @@ class PerformerFeature(Feature):
         pass
 
 
-class EatableFeature(Feature):
+class EdibleFeature(Feature):
     def __init__(self) -> None:
         super().__init__()
 
@@ -42,6 +43,46 @@ class EaterFeature(Feature):
 
     def gather_stats(self) -> defs.Stats:
         return defs.Stats(hunger=self.hunger_value, max_hunger=self.max_capacity)
+
+
+class ToolOrWeaponFeature(Feature):
+    def __init__(
+            self,
+            hit_damage: float,
+            chop_damage: float,
+            smash_damage: float,
+            attack_damage: float,
+        ) -> None:
+        super().__init__()
+        self.damage = {
+                defs.DamageVariant.HIT: hit_damage,
+                defs.DamageVariant.CHOP: chop_damage,
+                defs.DamageVariant.SMASH: smash_damage,
+                defs.DamageVariant.ATTACK: attack_damage,
+            }
+
+    def get_damage(self, variant: defs.DamageVariant) -> float:
+        return self.damage.get(variant, 0.0)
+
+
+class DamageableFeature(Feature):
+    def __init__(
+            self,
+            start_health: float,
+            max_health: float,
+            damage_variant: defs.DamageVariant,
+        ) -> None:
+        super().__init__()
+        self.health = start_health
+        self.max_health = max_health
+        self.damage_variant = damage_variant
+
+    def get_damage_variant(self) -> defs.DamageVariant:
+        return self.damage_variant
+
+    def handle_damage(self, damage_amount: float) -> bool:
+        self.health = max(0.0, self.health - damage_amount)
+        return self.health != 0.0
 
 
 class InventoryFeature(Feature):
@@ -65,11 +106,102 @@ class InventorableFeature(Feature):
         self.stored_by = id
 
 
+class Claim(Enum):
+    PAIN = 0
+    FOOD = 1
+    CARGO = 2
+
+
 class Features:
+    """Bundles all entity features.
+
+    Features are available only for read. To set during intialisation use `set_*` methods.
+
+    The order of calling the `set_*` methods defines the priority of tasks the entity can perform or
+    can be performed on the given entity. E.g. food may prefer to be stored to be eaten.
+    """
+
     def __init__(self) -> None:
-        self.performer: Optional[PerformerFeature] = None
-        self.eatable: Optional[EatableFeature] = None
-        self.eater: Optional[EaterFeature] = None
-        self.inventory: Optional[InventoryFeature] = None
-        self.inventorable: Optional[InventorableFeature] = None
+        self._delivery_claims: List[Claim] = list()
+        self._absorption_claims: Set[Claim] = set()
+
+        self.performer: Final[Optional[PerformerFeature]] = None
+
+        self.tool_or_weapon: Final[Optional[ToolOrWeaponFeature]] = None
+        self.damageable: Final[Optional[DamageableFeature]] = None
+
+        self.eatable: Final[Optional[EdibleFeature]] = None
+        self.eater: Final[Optional[EaterFeature]] = None
+
+        self.inventorable: Final[Optional[InventorableFeature]] = None
+        self.inventory: Final[Optional[InventoryFeature]] = None
+
+    def delivery_claims(self) -> List[Claim]:
+        return self._delivery_claims
+
+    def deliver(self, claim: Iterable[Claim]) -> bool:
+        for c in claim:
+            if claim in self._delivery_claims:
+                return True
+        return False
+
+    def absorb(self, claim: Iterable[Claim]) -> bool:
+        for c in claim:
+            if claim in self._absorption_claims:
+                return True
+        return False
+
+    def get_first_absorbed(self, claims: Iterable[Claim]) -> Optional[Claim]:
+        for claim in claims:
+            if claim in self._absorption_claims:
+                return claim
+        return None
+
+    def set_performer(self) -> None:
+        self.performer = PerformerFeature() # type: ignore[misc]
+
+    def set_tool_or_weapon(
+            self,
+            hit_damage: float,
+            chop_damage: float,
+            smash_damage: float,
+            attack_damage: float,
+        ) -> None:
+        self._delivery_claims.append(Claim.PAIN)
+        self.tool_or_weapon = ToolOrWeaponFeature( # type: ignore[misc]
+                hit_damage,
+                chop_damage,
+                smash_damage,
+                attack_damage,
+            )
+
+    def set_damageable(
+            self,
+            start_health: float,
+            max_health: float,
+            damage_variant: defs.DamageVariant,
+        ) -> None:
+        self._absorption_claims.add(Claim.PAIN)
+        self.damageable = DamageableFeature( # type: ignore[misc]
+                start_health,
+                max_health,
+                damage_variant,
+            )
+
+    def set_eatable(self) -> None:
+        self._delivery_claims.append(Claim.FOOD)
+        self.eatable = EdibleFeature() # type: ignore[misc]
+
+    def set_eater(self, max_capacity: float, hunger_value: float) -> None:
+        self._absorption_claims.add(Claim.FOOD)
+        self.eater = EaterFeature(max_capacity, hunger_value) # type: ignore[misc]
+
+    def set_inventorable(self) -> None:
+        self._delivery_claims.append(Claim.CARGO)
+        self.inventorable = InventorableFeature() # type: ignore[misc]
+
+    def set_inventory(self) -> None:
+        self._absorption_claims.add(Claim.CARGO)
+        self.inventory = InventoryFeature() # type: ignore[misc]
+
 

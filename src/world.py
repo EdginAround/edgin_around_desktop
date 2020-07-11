@@ -5,7 +5,7 @@ import pyglet
 
 from OpenGL import GL
 
-from typing import Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 from . import defs, geometry, graphics, media, scene
 
@@ -32,6 +32,9 @@ class World:
         self.ready = False
         self.scene = scene
         self.media = media.Media()
+        self.media.load_textures()
+
+        self.renderers_entities: List[graphics.PlainRenderer] = list()
 
     def get_highlight_actor_id(self) -> Optional[defs.ActorId]:
         return self.highlight_actor_id
@@ -93,15 +96,32 @@ class World:
                 2.0 * y / self.height - 1.0
             )
 
+    def create_renderers(self, actors: Iterable[scene.Actor]) -> None:
+        if self.scene.is_ready():
+            for actor in actors:
+                if actor.position is not None:
+                    self.renderers_entities.append(graphics.PlainRenderer(
+                        self.scene.get_elevation(actor.position, with_radius=True),
+                        actor.position.theta, actor.position.phi, self.bearing,
+                        self.media.tex[actor.texture_name],
+                        actor.id,
+                    ))
+
+    def delete_renderers(self, ids: Iterable[defs.ActorId]) -> None:
+        if self.scene.is_ready():
+            self.renderers_entities[:] = \
+                [render for render in self.renderers_entities if render.actor_id not in ids]
+
     def draw(self) -> None:
         if not self.ready and self.scene.is_ready():
             self._init_gl()
             self._load_data()
             self.ready = True
 
-        self._setup_gl()
-        self._draw()
-        self._cleanup_gl()
+        if self.ready:
+            self._setup_gl()
+            self._draw()
+            self._cleanup_gl()
 
     def _load_shader(self, type, source):
         shader = GL.glCreateShader(type)
@@ -164,19 +184,12 @@ class World:
         self.radius = self.scene.get_radius()
         self.elevation = self.scene.get_elevation(geometry.Point(self.theta, self.phi))
 
-        self.media.load_textures()
-
         figure = geometry.Structures.sphere(5, self.radius)
         self.renderer_water = graphics.SolidPolyhedronRenderer(figure, self.media.tex.water)
         figure.rescale(self.scene.elevation_function)
         self.renderer_ground = graphics.SolidPolyhedronRenderer(figure, self.media.tex.grass)
 
-        self.renderers_entities = [graphics.PlainRenderer(
-                self.scene.get_elevation(actor.position, with_radius=True),
-                actor.position.theta, actor.position.phi, self.bearing,
-                self.media.tex[actor.texture_name],
-                actor.id,
-            ) for actor in self.scene.get_actors() if actor.position is not None]
+        self.create_renderers(self.scene.get_actors())
 
     def _refresh_projection(self):
         self.projection = \

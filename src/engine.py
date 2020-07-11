@@ -2,7 +2,7 @@ import time
 
 from typing import Dict, Optional, Union
 
-from . import actions, essentials, events, executor, jobs, scene, state
+from . import actions, defs, essentials, events, executor, jobs, scene, state
 
 HERO_ENTITY_ID = 0
 
@@ -18,31 +18,30 @@ class Engine(executor.Processor):
         self.proxy = proxy
         self.clients: Dict[int, ClientInfo] = dict()
 
+    def get_hero_id_for_client(self, client_id: int) -> Optional[defs.ActorId]:
+        client = self.clients[client_id]
+        return client.hero_entity_id if client is not None else None
+
     def start(self, scheduler) -> None:
         self.scheduler = scheduler
         for entity in self.state.get_entities():
             entity_id = entity.get_id()
             if entity.features.performer is not None:
-                self.run(None, entity_id=entity_id, trigger=events.ResumeEvent())
+                self.run(None, trigger=events.ResumeEvent(entity_id))
             if entity.features.eater is not None:
-                self.run(None, entity_id=entity_id, trigger=jobs.HungerDrainJob())
+                self.run(None, trigger=jobs.HungerDrainJob(entity_id))
 
     def run(self, handle: Optional[int], **kwargs) -> None:
-        entity_id: essentials.EntityId = kwargs['entity_id']
         trigger: Union[events.Event, essentials.Job] = kwargs['trigger']
 
-        entity = self.state.get_entity(entity_id)
+        if isinstance(trigger, essentials.Job):
+            self._handle_job(handle, trigger)
 
-        if entity is not None:
-            if isinstance(trigger, essentials.Job):
-                self._handle_job(handle, entity, trigger)
+        elif isinstance(trigger, events.Event):
+            self._handle_event(trigger)
 
-            elif isinstance(trigger, events.Event):
-                self._handle_event(entity, trigger)
-
-    def handle_event(self, client_id: int, event: events.Event) -> None:
-        client = self.clients[client_id]
-        self.run(None, entity_id=client.hero_entity_id, trigger=event)
+    def handle_event(self, event: events.Event) -> None:
+        self.run(None, trigger=event)
 
     def handle_connection(self, client_id: int) -> None:
         actors = [scene.Actor(
@@ -57,22 +56,23 @@ class Engine(executor.Processor):
         ))
         self.proxy.send_action(actions.CreateActorsAction(actors))
 
-    def _handle_job(self,
-            handle: executor.JobHandle,
-            entity: essentials.Entity,
-            job: essentials.Job,
-        ) -> None:
-        result = job.perform(entity, self.state)
+    def _handle_job(self, handle: executor.JobHandle, job: essentials.Job) -> None:
+        result = job.perform(self.state)
 
         for action in result.actions:
             self.proxy.send_action(action)
 
-        if isinstance(result.repeat, float):
-            self.scheduler.enter(handle, result.repeat, entity_id=entity.get_id(), trigger=job)
-        elif isinstance(result.repeat, events.Event):
-            self.scheduler.enter(None, 0.0, entity_id=entity.get_id(), trigger=result.repeat)
+        for event in result.events:
+            self.scheduler.enter(None, 0.0, entity_id=event.get_receiver_id(), trigger=event)
 
-    def _handle_event(self, entity: essentials.Entity, event: events.Event) -> None:
+        if result.repeat is not None:
+            self.scheduler.enter(handle, result.repeat, trigger=job)
+
+    def _handle_event(self, event: events.Event) -> None:
+        entity = self.state.get_entity(event.get_receiver_id())
+        if entity is None:
+            return
+
         old_task = entity.get_task()
         entity.handle_event(event)
         new_task = entity.get_task()
@@ -81,16 +81,15 @@ class Engine(executor.Processor):
             for action in old_task.finish(self.state):
                 self.proxy.send_action(action)
 
+            for action in new_task.start(self.state):
+                self.proxy.send_action(action)
+
             next_job = new_task.get_job()
             self.scheduler.cancel(handle=entity.get_id())
             if next_job is not None:
                 self.scheduler.enter(
                         handle=entity.get_id(),
                         delay=next_job.get_start_delay(),
-                        entity_id=entity.get_id(),
                         trigger=next_job,
                     )
-
-            for action in new_task.start(self.state):
-                self.proxy.send_action(action)
 

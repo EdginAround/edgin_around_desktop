@@ -4,7 +4,7 @@ from OpenGL import GL
 
 from typing import Any, Iterable
 
-IMAGE_NAMES = ('axe', 'grass', 'water', 'hero', 'warior', 'rocks')
+IMAGE_NAMES = ('axe', 'grass', 'water', 'hero', 'log', 'warrior', 'rocks', 'spruce')
 
 
 def format_image_name(image_name: str) -> str:

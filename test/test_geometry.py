@@ -6,17 +6,17 @@ from math import pi, atan, sqrt, radians
 from src import geometry
 
 class GeometryTest(unittest.TestCase):
-    def assert_tuples_almost_equal(self, t1, t2):
+    def assert_tuples_almost_equal(self, t1, t2) -> None:
         self.assertEqual(len(t1), len(t1))
         for e1, e2 in zip(t1, t2):
             self.assertAlmostEqual(e1, e2)
 
-    def assert_arrays_almost_equal(self, t1, t2):
+    def assert_arrays_almost_equal(self, t1, t2) -> None:
         self.assertEqual(len(t1), len(t1))
         for e1, e2 in zip(t1, t2):
             self.assert_tuples_almost_equal(e1, e2)
 
-    def test_cartesian_to_spherical(self):
+    def test_cartesian_to_spherical(self) -> None:
         for cartesian, expected in (
             ((1.0, 0.0, 0.0), (     1.0,      0.50 * pi, 0.50 * pi)),
             ((0.0, 1.0, 0.0), (     1.0,      0.00 * pi, 0.50 * pi)),
@@ -30,7 +30,7 @@ class GeometryTest(unittest.TestCase):
             self.assertEqual(expected, computed)
 
 
-    def test_spherical_to_cartesian(self):
+    def test_spherical_to_cartesian(self) -> None:
         for spherical, expected in (
             ((1.0, 0.0 * pi, 0.0 * pi), (0.0,  1.0,  0.0)),
             ((1.0, 1.0 * pi, 0.0 * pi), (0.0, -1.0,  0.0)),
@@ -42,7 +42,7 @@ class GeometryTest(unittest.TestCase):
             computed = geometry.Coordinates.spherical_to_cartesian(*spherical)
             self.assert_tuples_almost_equal(expected, computed)
 
-    def test_spherical_to_geographical_degrees(self):
+    def test_spherical_to_geographical_degrees(self) -> None:
         for spherical, geographical in (
             ((1.0, 0.00 * pi, 0.0 * pi), (1.0,  90.0,    0.0)),
             ((1.0, 0.25 * pi, 0.5 * pi), (1.0,  45.0,   90.0)),
@@ -53,7 +53,7 @@ class GeometryTest(unittest.TestCase):
             computed = geometry.Coordinates.spherical_to_geographical_degrees(*spherical)
             self.assert_tuples_almost_equal(geographical, computed)
 
-    def test_geographical_degrees_spherical(self):
+    def test_geographical_degrees_spherical(self) -> None:
         for geographical, spherical in (
             ((1.0,  90.0,    0.0), (1.0, 0.00 * pi, 0.0 * pi)),
             ((1.0,  45.0,   90.0), (1.0, 0.25 * pi, 0.5 * pi)),
@@ -64,8 +64,8 @@ class GeometryTest(unittest.TestCase):
             computed = geometry.Coordinates.geographical_degrees_to_spherical(*geographical)
             self.assert_tuples_almost_equal(spherical, computed)
 
-    def test_bearing(self):
-        for p1, p2, expected1, expected2 in (
+    def test_bearing(self) -> None:
+        for t1, t2, expected1, expected2 in (
             ((0.5 * pi, 0.0 * pi), (0.00 * pi,  0.0 * pi),  0.00 * pi,  1.00 * pi),
             ((0.5 * pi, 0.0 * pi), (0.25 * pi,  0.5 * pi),  0.25 * pi, -0.50 * pi),
             ((0.5 * pi, 0.0 * pi), (0.50 * pi,  0.5 * pi),  0.50 * pi, -0.50 * pi),
@@ -75,14 +75,14 @@ class GeometryTest(unittest.TestCase):
             ((0.5 * pi, 0.0 * pi), (0.50 * pi, -0.5 * pi), -0.50 * pi,  0.50 * pi),
             ((0.5 * pi, 0.0 * pi), (0.25 * pi, -0.5 * pi), -0.25 * pi,  0.50 * pi),
         ):
-            p1 = geometry.Point(*p1)
-            p2 = geometry.Point(*p2)
+            p1 = geometry.Point(*t1)
+            p2 = geometry.Point(*t2)
             computed1 = p1.bearing_to(p2)
             computed2 = p2.bearing_to(p1)
             self.assertAlmostEqual(expected1, computed1)
             self.assertAlmostEqual(expected2, computed2)
 
-    def test_personal_to_global(self):
+    def test_personal_to_global(self) -> None:
         left     = numpy.array((-1.0,  0.0,  0.0, 1.0)).reshape(4, 1)
         right    = numpy.array(( 1.0,  0.0,  0.0, 1.0)).reshape(4, 1)
         up       = numpy.array(( 0.0,  1.0,  0.0, 1.0)).reshape(4, 1)
@@ -154,6 +154,3 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ forward, forward)
         self.assert_arrays_almost_equal(transformation @ backward, backward)
 
-
-if __name__ == '__main__':
-    unittest.main()

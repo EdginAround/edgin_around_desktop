@@ -1,80 +1,81 @@
-import unittest
+from . import common
+
+from typing import List
 
 from src import actions, defs, entities, essentials, events, generator, geometry, jobs
 
-class HeroTest(unittest.TestCase):
-    def test_resume(self):
-        hero = entities.Hero(0, position=geometry.Point(0.0, 0.0))
-        world = generator.WorldGenerator().generate_basic(100.0)
-        world.entities = {0: hero}
+class HeroTest(common.EntityTest):
+    def test_resume(self) -> None:
+        hero = entities.Hero(0, (0.0, 0.0))
+        self.world.add_entity(hero)
 
-        old = hero.get_task()
-        hero.handle_event(events.ResumeEvent())
-        new = hero.get_task()
+        old, new = self.handle_event(hero, events.ResumeEvent(hero.get_id()))
         self.assertTrue(isinstance(old, essentials.IdleTask))
         self.assertTrue(isinstance(new, essentials.IdleTask))
-        self.assertEqual(old.finish(world), list())
+        self.assertEqual(old.finish(self.world), list())
         self.assertEqual(new.get_job(), None)
-        self.assertEqual(new.start(world), list())
+        self.assertEqual(new.start(self.world), list())
 
-    def test_movement(self):
-        id = 0
+    def test_movement(self) -> None:
+        expected_initial: List[actions.Action]
+
         bearing = 0.0
-        interval = 0.1
         max_duration = 20.0
         speed = 1.0
+        ignored_location = geometry.Point(0.0, 0.0)
 
-        hero = entities.Hero(0, position=geometry.Point(0.0, 0.0))
-        world = generator.WorldGenerator().generate_basic(100.0)
-        world.entities = {0: hero}
+        hero = entities.Hero(0, (0.0, 0.0))
+        self.world.add_entity(hero)
+        id = hero.get_id()
 
-        old = hero.get_task()
-        hero.handle_event(events.StartMovingEvent(bearing))
-        new = hero.get_task()
+        old, new = self.handle_event(hero, events.StartMovingEvent(id, bearing))
         self.assertIsNot(old, new)
-        final_actions, job, start_actions = old.finish(world), new.get_job(), new.start(world)
-        self.assertEqual(final_actions, list())
-        self.assertEqual(job, jobs.MovementJob(speed, bearing, max_duration, None))
-        self.assertEqual(job.get_start_delay(), interval)
-        self.assertEqual(start_actions, [actions.MovementAction(id, speed, bearing, max_duration)])
 
-        old = hero.get_task()
-        hero.handle_event(events.StopMovingEvent())
-        new = hero.get_task()
+        expected_initial = [actions.MovementAction(id, speed, bearing, max_duration)]
+        expected_job = jobs.MovementJob(id, speed, bearing, max_duration, list())
+        self.assert_actions(old.finish(self.world), list())
+        self.assert_actions(new.start(self.world), expected_initial)
+        self.assert_job(new.get_job(), expected_job)
+
+        old, new = self.handle_event(hero, events.StopEvent(id))
         self.assertIsNot(old, new)
-        final_actions, job, start_actions = old.finish(world), new.get_job(), new.start(world)
-        self.assertTrue(isinstance(final_actions[0], actions.LocalizeAction))
-        self.assertEqual(job, None)
-        self.assertEqual(start_actions, list())
 
-    def test_picking(self):
-        hero_id, far_id, close_id = 0, 1, 2
-        hero = entities.Hero(hero_id, position=geometry.Point(0.0, 0.0))
-        far_object = entities.Rocks(far_id, position=geometry.Point(10.0, 10.0))
-        close_object = entities.Rocks(close_id, position=geometry.Point(10.0, 10.0))
+        expected_initial = [actions.LocalizeAction(id, ignored_location)]
+        self.assert_actions(old.finish(self.world), expected_initial)
+        self.assert_actions(new.start(self.world), list())
+        self.assert_job(new.get_job(), None)
 
-        world = generator.WorldGenerator().generate_basic(100.0)
-        world.entities = {hero_id: hero, far_id: far_object, close_id: close_object}
+    def test_picking(self) -> None:
+        pick_timeout = 1.0
+        hero = entities.Hero(0, (0.0, 0.0))
+        far_object = entities.Rocks(0, (0.011, 0.011))
+        close_object = entities.Rocks(0, (0.009, 0.009))
+
+        self.world.add_entity(hero)
+        self.world.add_entity(far_object)
+        self.world.add_entity(close_object)
+        hero_id, far_id, close_id = hero.get_id(), far_object.get_id(), close_object.get_id()
+        self.assertNotEqual(hero_id, far_id)
+        self.assertNotEqual(hero_id, close_id)
+        self.assertNotEqual(close_id, far_id)
 
         # Try to pick an item that is out of range
-        old = hero.get_task()
-        hero.handle_event(events.HandActivationEvent(defs.Hand.RIGHT, close_id))
-        new = hero.get_task()
+        hand_event = events.HandActivationEvent(hero_id, defs.Hand.RIGHT, far_id)
+        old, new = self.handle_event(hero, hand_event)
         self.assertIsNot(old, new)
-        final_actions, job, start_actions = old.finish(world), new.get_job(), new.start(world)
-        self.assertEqual(final_actions, list())
-        self.assertEqual(job, jobs.WaitJob(hero.PICK_TIMEOUT, None))
-        self.assertEqual(job.get_start_delay(), hero.PICK_TIMEOUT)
-        self.assertEqual(start_actions, [actions.PickStartAction(who=hero_id, what=close_id)])
+
+        self.assert_actions(old.finish(self.world), list())
+        self.assert_actions(new.start(self.world), list())
+        self.assert_job(new.get_job(), None)
 
         # Try to pick an item that is withing range
-        old = hero.get_task()
-        hero.handle_event(events.HandActivationEvent(defs.Hand.RIGHT, close_id))
-        new = hero.get_task()
+        hand_event = events.HandActivationEvent(hero_id, defs.Hand.RIGHT, close_id)
+        old, new = self.handle_event(hero, hand_event)
         self.assertIsNot(old, new)
-        final_actions, job, start_actions = old.finish(world), new.get_job(), new.start(world)
-        self.assertEqual(final_actions, list())
-        self.assertEqual(job, jobs.WaitJob(hero.PICK_TIMEOUT, None))
-        self.assertEqual(job.get_start_delay(), hero.PICK_TIMEOUT)
-        self.assertEqual(start_actions, [actions.PickStartAction(who=hero_id, what=close_id)])
+
+        expected_job = jobs.WaitJob(pick_timeout, list())
+        expected_initial = [actions.PickStartAction(who=hero_id, what=close_id)]
+        self.assert_actions(old.finish(self.world), list())
+        self.assert_actions(new.start(self.world), expected_initial)
+        self.assert_job(new.get_job(), expected_job)
 

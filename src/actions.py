@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import List
 
 from . import animations, defs, geometry, inventory, scene
@@ -9,9 +10,7 @@ class Action:
     def __str__(self) -> str:
         return 'Action'
 
-    def __eq__(self, other) -> bool:
-        return str(self) == str(other)
-
+    @abstractmethod
     def into_animation(self) -> animations.Animation:
         raise NotImplementedError('This action cannot be casted to an animation')
 
@@ -114,16 +113,15 @@ class PickStartAction(Action):
 
 
 class PickEndAction(Action):
-    def __init__(self, who: defs.ActorId, what: defs.ActorId) -> None:
+    def __init__(self, who: defs.ActorId) -> None:
         super().__init__()
         self.who = who
-        self.what = what
 
     def __str__(self) -> str:
-        return f'PickEndAction(who={self.who}, what={self.what})'
+        return f'PickEndAction(who={self.who})'
 
     def into_animation(self) -> animations.PickEndAnimation:
-        return animations.PickEndAnimation(self.who, self.what)
+        return animations.PickEndAnimation(self.who)
 
 
 class UpdateInventoryAction(Action):
@@ -136,4 +134,24 @@ class UpdateInventoryAction(Action):
 
     def into_animation(self) -> animations.UpdateInventoryAnimation:
         return animations.UpdateInventoryAnimation(self.inventory)
+
+
+class DamageAction(Action):
+    def __init__(
+            self,
+            dealer_id: defs.ActorId,
+            receiver_id: defs.ActorId,
+            variant: defs.DamageVariant,
+        ) -> None:
+        super().__init__()
+        self.dealer_id = dealer_id
+        self.receiver_id = receiver_id
+        self.variant = variant
+
+    def __str__(self) -> str:
+        return f'UpdateInventoryAction'
+
+    def into_animation(self) -> animations.DamageAnimation:
+        return animations.DamageAnimation(self.dealer_id, self.receiver_id, self.variant)
+
 

@@ -1,50 +1,73 @@
+from typing import List, Optional
+
 from . import defs
 
 
-class Event:
-    def __init__(self) -> None:
-        pass
+class Event(defs.Debugable):
+    DEBUG_FIELDS: List[str] = []
+
+    def __init__(self, receiver_id) -> None:
+        self._receiver_id = receiver_id
+
+    def get_receiver_id(self) -> defs.ActorId:
+        return self._receiver_id
 
 
 class ResumeEvent(Event):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def __eq__(self, other):
-        return self.__class__ == other.__class__
+    def __init__(self, receiver_id: defs.ActorId) -> None:
+        super().__init__(receiver_id)
 
 
 class FinishedEvent(Event):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, receiver_id: defs.ActorId) -> None:
+        super().__init__(receiver_id)
 
-    def __eq__(self, other):
-        return self.__class__ == other.__class__
+
+class StopEvent(Event):
+    def __init__(self, receiver_id: defs.ActorId) -> None:
+        super().__init__(receiver_id)
+
+
+class ConcludeEvent(Event):
+    def __init__(self, receiver_id: defs.ActorId) -> None:
+        super().__init__(receiver_id)
 
 
 class StartMovingEvent(Event):
-    def __init__(self, bearing) -> None:
-        super().__init__()
+    DEBUG_FIELDS = ['bearing']
+
+    def __init__(self, receiver_id: defs.ActorId, bearing) -> None:
+        super().__init__(receiver_id)
         self.bearing = bearing
-
-    def __eq__(self, other):
-        return self.__class__ == other.__class__
-
-
-class StopMovingEvent(Event):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def __eq__(self, other):
-        return self.__class__ == other.__class__
 
 
 class HandActivationEvent(Event):
-    def __init__(self, hand: defs.Hand, item_id: defs.ActorId) -> None:
-        super().__init__()
-        self.hand = hand
-        self.item_id = item_id
+    DEBUG_FIELDS = ['hand', 'object_id']
 
-    def __eq__(self, other):
-        return self.__class__ == other.__class__
+    def __init__(
+            self,
+            receiver_id: defs.ActorId,
+            hand: defs.Hand,
+            object_id: Optional[defs.ActorId],
+        ) -> None:
+        super().__init__(receiver_id)
+        self.hand = hand
+        self.object_id = object_id
+
+
+class DamageEvent(Event):
+    DEBUG_FIELDS = ['dealer_id', 'receiver_id', 'damage_amount', 'damage_variant']
+
+    def __init__(
+            self,
+            receiver_id: defs.ActorId,
+            dealer_id: defs.ActorId,
+            damage_amount: float,
+            damage_variant: defs.DamageVariant,
+        ) -> None:
+        super().__init__(receiver_id)
+        self.dealer_id = dealer_id
+        self.receiver_id = receiver_id
+        self.damage_amount = damage_amount
+        self.damage_variant = damage_variant
 
