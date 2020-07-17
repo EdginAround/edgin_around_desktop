@@ -2,7 +2,7 @@ import numpy
 
 from math import asin, atan2, cos, degrees, pi, radians, sin, sqrt, tan
 
-from typing import Callable, List
+from typing import Callable, List, Tuple
 
 ####################################################################################################
 
@@ -229,11 +229,26 @@ class Structures:
 
 ####################################################################################################
 
-class Matrices:
-    """Matrix generator class."""
+class Matrices3D:
+    """Generator for 3D transformations."""
 
     @staticmethod
-    def projection(fovy, width, height, near, far):
+    def identity() -> numpy.array:
+        return numpy.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ], dtype=numpy.float32)
+
+    @staticmethod
+    def perspective(
+            fovy: float,
+            width: float,
+            height: float,
+            near: float,
+            far: float,
+        ) -> numpy.array:
         s = 1.0 / tan(0.5 * fovy)
         sx, sy = s * height / width, s
         zz = (far + near) / (near - far)
@@ -242,54 +257,111 @@ class Matrices:
             [sx,  0,  0,  0],
             [ 0, sy,  0,  0],
             [ 0,  0, zz, zw],
-            [ 0,  0, -1,  0]
-        ], dtype = numpy.float32)
+            [ 0,  0, -1,  0],
+        ], dtype=numpy.float32)
 
     @staticmethod
-    def translation(vector):
-        x, y, z = vector[0], vector[1], vector[2]
+    def orthographic(
+            left: float,
+            right: float,
+            bottom: float,
+            top: float,
+            near: float,
+            far: float,
+        ) -> numpy.array:
+        wr = 1.0 / (right - left)
+        hr = 1.0 / (top - bottom)
+        dr = 1.0 / (far - near)
+        return numpy.array([
+            [2.0 * wr,        0,         0, -(right + left) * wr],
+            [       0, 2.0 * hr,         0, -(top + bottom) * hr],
+            [       0,        0, -2.0 * dr,   -(far + near) * dr],
+            [       0,        0,         0,                    1],
+        ], dtype=numpy.float32)
+
+    @staticmethod
+    def translation(vector: Tuple[float, float, float]) -> numpy.array:
+        x, y, z = vector
         return numpy.array([
             [1, 0, 0, x],
             [0, 1, 0, y],
             [0, 0, 1, z],
-            [0, 0, 0, 1]
-        ], dtype = numpy.float32)
+            [0, 0, 0, 1],
+        ], dtype=numpy.float32)
 
     @staticmethod
-    def rotation_x(a):
+    def rotation_x(a: float) -> numpy.array:
         c, s = cos(a), sin(a)
         return numpy.array([
             [1.0, 0.0, 0.0, 0.0],
             [0.0,   c,  -s, 0.0],
             [0.0,   s,   c, 0.0],
             [0.0, 0.0, 0.0, 1.0],
-        ], dtype = numpy.float32)
+        ], dtype=numpy.float32)
 
     @staticmethod
-    def rotation_y(a):
+    def rotation_y(a: float) -> numpy.array:
         c, s = cos(a), sin(a)
         return numpy.array([
             [  c, 0.0,   s, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [ -s, 0.0,   c, 0.0],
             [0.0, 0.0, 0.0, 1.0],
-        ], dtype = numpy.float32)
+        ], dtype=numpy.float32)
 
     @staticmethod
-    def rotation_z(a):
+    def rotation_z(a: float) -> numpy.array:
         c, s = cos(a), sin(a)
         return numpy.array([
             [  c,  -s, 0.0, 0.0],
             [  s,   c, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0],
-        ], dtype = numpy.float32)
+        ], dtype=numpy.float32)
 
     @staticmethod
-    def personal_to_global(theta, phi, bearing):
-        return Matrices.rotation_y(phi) \
-             @ Matrices.rotation_x(theta) \
-             @ Matrices.rotation_y(-bearing)
+    def personal_to_global(theta, phi, bearing) -> numpy.array:
+        return Matrices3D.rotation_y(phi) \
+             @ Matrices3D.rotation_x(theta) \
+             @ Matrices3D.rotation_y(-bearing)
+
+class Matrices2D:
+    """Generator for 2D transformations."""
+
+    @staticmethod
+    def identity() -> numpy.array:
+        return numpy.array([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ], dtype=numpy.float32)
+
+    @staticmethod
+    def translation(vector: Tuple[float, float]) -> numpy.array:
+        x, y = vector
+        return numpy.array([
+            [1, 0, x],
+            [0, 1, y],
+            [0, 0, 1],
+        ], dtype=numpy.float32)
+
+    @staticmethod
+    def rotation(a: float) -> numpy.array:
+        c, s = cos(a), sin(a)
+        return numpy.array([
+            [  c,  -s, 0.0],
+            [  s,   c, 0.0],
+            [0.0, 0.0, 1.0],
+        ], dtype=numpy.float32)
+
+    @staticmethod
+    def scale(scale: Tuple[float, float]) -> numpy.array:
+        x, y = scale
+        return numpy.array([
+            [  x, 0.0, 0.0],
+            [0.0,   y, 0.0],
+            [0.0, 0.0, 1.0],
+        ], dtype=numpy.float32)
 
 ####################################################################################################
 
@@ -302,6 +374,33 @@ class Boundary2D:
 
     def contains(self, x: float, y: float) -> bool:
         return self.left < x and x < self.right and self.bottom < y and y < self.top
+
+
+class Tile:
+    def __init__(self, name: str, position: Tuple[float, float], size: Tuple[float, float]) -> None:
+        self.name = name
+        self.points = [
+            numpy.array([position[0],           position[1]          , 1.0], dtype=numpy.float32),
+            numpy.array([position[0],           position[1] + size[1], 1.0], dtype=numpy.float32),
+            numpy.array([position[0] + size[0], position[1] + size[1], 1.0], dtype=numpy.float32),
+            numpy.array([position[0] + size[0], position[1]          , 1.0], dtype=numpy.float32),
+        ]
+
+    def rotate(self, angle: float):
+        self.transform(Matrices2D.rotation(angle))
+
+    def translate(self, vector: Tuple[float, float]):
+        self.transform(Matrices2D.translation(vector))
+
+    def scale(self, vector: Tuple[float, float]):
+        self.transform(Matrices2D.scale(vector))
+
+    def transform(self, matrix: numpy.array):
+        for i, point in enumerate(self.points):
+            self.points[i] = matrix @ point.reshape(3, 1)
+
+    def __str__(self) -> str:
+        return f'Tile(name="{self.name}", points={self.points})'
 
 ####################################################################################################
 

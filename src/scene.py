@@ -8,11 +8,11 @@ class Actor:
             self,
             id: defs.ActorId,
             position: Optional[geometry.Point],
-            texture_name: str,
+            entity_name: str,
         ) -> None:
         self.id = id
         self.position = position
-        self.texture_name = texture_name
+        self.entity_name = entity_name
 
     def get_id(self) -> defs.ActorId:
         return self.id
@@ -72,6 +72,7 @@ class Scene:
 
     def delete_actors(self, actor_ids: Iterable[defs.ActorId]) -> None:
         for id in actor_ids:
-            del self.actors[id]
+            if id in self.actors:
+                del self.actors[id]
 
 

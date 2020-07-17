@@ -13,7 +13,7 @@ if (( $# > 0 )); then
 
     case $command in
         'mypy')
-            python -m mypy egida.py --show-error-codes $@
+            python -m mypy egida.py preview.py --show-error-codes $@
             ;;
         'mypy-tests')
             python -m mypy test/test_*.py --show-error-codes $@

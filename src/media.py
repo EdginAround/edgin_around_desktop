@@ -2,21 +2,27 @@ import pyglet
 
 from OpenGL import GL
 
-from typing import Any, Iterable
+from typing import Any, Iterable, List
 
-IMAGE_NAMES = ('axe', 'grass', 'water', 'hero', 'log', 'warrior', 'rocks', 'spruce')
+IMAGE_NAMES_TILE: List[str] = ['grass', 'water']
+
+DIR_INVENTORY: str = './res/inventory'
+DIR_SPRITES: str = './res/sprites'
+DIR_TILES: str = './res/tiles'
 
 
-def format_image_name(image_name: str) -> str:
-    return f'res/images/{image_name}.png'
+def format_image_name(dir_name: str, image_name: str) -> str:
+    return f'{dir_name}/{image_name}.png'
 
 
 class Textures:
-    def __init__(self, image_names: Iterable[str]) -> None:
-        self._images = { image_name: self._load_texture(image_name) for image_name in image_names }
+    def __init__(self, image_names: Iterable[str], dir: str) -> None:
+        self._images = {
+                image_name: self._load_texture(dir, image_name) for image_name in image_names
+            }
 
-    def _load_texture(self, image_name: str) -> int:
-        image = pyglet.image.load(format_image_name(image_name))
+    def _load_texture(self, dir_name: str, image_name: str) -> int:
+        image = pyglet.image.load(format_image_name(dir_name, image_name))
         texture = GL.glGenTextures(1)
         GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
@@ -36,8 +42,8 @@ class Textures:
 
 class Media:
     def __init__(self) -> None:
-        self.tex: Any = Textures([])
+        self.tex: Any = Textures([], '')
 
-    def load_textures(self) -> None:
-        self.tex = Textures(IMAGE_NAMES)
+    def load_tiles(self) -> None:
+        self.tex = Textures(IMAGE_NAMES_TILE, DIR_TILES)
 

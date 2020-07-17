@@ -8,6 +8,8 @@ INVENTORY_IMAGES = ('left_hand', 'right_hand', 'axe', 'rocks', 'log')
 LEFT_HAND = 'left_hand'
 RIGHT_HAND = 'right_hand'
 
+pyglet.resource.path = [media.DIR_INVENTORY]
+
 
 class StatLabel(glooey.Label):
     custom_color = '#eeeeec'
@@ -26,8 +28,7 @@ class Dials(glooey.Board):
         # Load textures
         self.tex = {}
         for image_name in INVENTORY_IMAGES:
-            full_name = media.format_image_name(image_name)
-            texture = pyglet.resource.texture(full_name)
+            texture = pyglet.resource.texture(image_name + '.png')
             self.tex[image_name] = texture
 
         # Stats display

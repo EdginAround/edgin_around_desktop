@@ -1,6 +1,6 @@
 #version 300 es
 
-uniform mat4 uniProj;
+uniform mat4 uniModel;
 uniform mat4 uniView;
 uniform int uniHighlight;
 
@@ -11,7 +11,7 @@ flat out highp int shHighlight;
 out highp vec2 shTexCoords;
 
 void main(void) {
-    gl_Position = uniProj * uniView * vec4(inPosition, 1);
+    gl_Position = uniView * uniModel * vec4(inPosition, 1);
     shHighlight = uniHighlight;
     shTexCoords = inTexCoords;
 }
