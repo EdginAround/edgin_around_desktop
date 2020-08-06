@@ -6,6 +6,12 @@ from typing import Iterable, List, Optional
 from . import defs, dials, geometry, inventory, scene, world
 
 
+class AnimationName:
+    IDLE = 'idle'
+    WALK = 'walk'
+    PICK = 'pick'
+
+
 class Animation:
     def __init__(self, timeout):
         self._expired = False
@@ -80,6 +86,7 @@ class MovementAnimation(Animation):
         self.actor_id = actor_id
         self.speed = speed
         self.bearing = bearing
+        self._tick_count = 0
 
     def get_actor_id(self) -> defs.ActorId:
         return self.actor_id
@@ -88,6 +95,9 @@ class MovementAnimation(Animation):
         distance = self.speed * interval
         actor = scene.get_actor(self.actor_id)
         actor.move_by(distance, self.bearing, scene.get_radius())
+        if self._tick_count == 0:
+            world.play_animation(self.actor_id, AnimationName.WALK)
+        self._tick_count += 1
 
 
 class LocalizeAnimation(Animation):
@@ -103,6 +113,7 @@ class LocalizeAnimation(Animation):
         actor = scene.get_actor(self.actor_id)
         if actor is not None:
             actor.set_position(self.position)
+        world.play_animation(self.actor_id, AnimationName.IDLE)
         self.expire()
 
 
@@ -113,7 +124,6 @@ class StatUpdateAnimation(Animation):
         self.stats = stats
 
     def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
-        actor = scene.get_actor(self.actor_id)
         dials.set_stats(self.stats)
         self.expire()
 
@@ -125,7 +135,7 @@ class PickStartAnimation(Animation):
         self.item_id = item_id
 
     def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
-        # TODO: Implement animations and play pick animation here
+        world.play_animation(self.actor_id, AnimationName.PICK)
         self.expire()
 
 
@@ -135,7 +145,7 @@ class PickEndAnimation(Animation):
         self.actor_id = actor_id
 
     def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
-        # TODO: Implement animations and play pick animation here
+        world.play_animation(self.actor_id, AnimationName.IDLE)
         self.expire()
 
 

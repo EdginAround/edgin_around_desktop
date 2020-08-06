@@ -94,7 +94,7 @@ class Hero(essentials.Entity):
         self.features.set_eater(max_capacity=100.0, hunger_value=50.0)
 
     def get_name(self) -> str:
-        return 'hero'
+        return 'pirate'
 
     def handle_event(self, event: events.Event) -> None:
         assert self.features.inventory

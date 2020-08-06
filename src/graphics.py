@@ -192,17 +192,29 @@ class SkeletonRenderer:
         self._unbind()
 
         self._start_moment = time.monotonic()
+        self._animation_name: str = ''
         self.select_animation(self.DEFAULT_ANIMATION)
 
     def select_animation(self, name: str) -> None:
-        self._start_moment = time.monotonic()
-        self._animation = self._skeleton.get_animation(name)
+        if name != self._animation_name:
+            self._start_moment = time.monotonic()
+            self._animation = self._skeleton.get_animation(name)
+            if self._animation is None:
+                print(f'Animation "{name}" not found')
+                self._animation = self._skeleton.get_animation(self.DEFAULT_ANIMATION)
+                self._animation_name = self.DEFAULT_ANIMATION
+            else:
+                self._animation_name = name
 
     def render(self) -> None:
         assert self._animation is not None
 
         stride: Final[int] = 6
+
         interval = time.monotonic() - self._start_moment
+        if not self._animation.is_looped() and interval > self._animation.get_length():
+            self.select_animation(self.DEFAULT_ANIMATION)
+            interval = 0.0
 
         self._bind()
 
@@ -250,7 +262,7 @@ class SkeletonRenderer:
         GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, 4 * len(indices), indices, GL.GL_STATIC_DRAW)
 
     def _prepare_vertices(self, tiles: Iterable[geometry.Tile]) -> numpy.array:
-        SEPARATION = 0.00001
+        SEPARATION = 0.001
         data = []
         for i, tile in enumerate(tiles):
             data.append([
@@ -307,6 +319,9 @@ class PositionedSkeletonRenderer:
         self._update_position(radius, theta, phi, bearing)
         self._update_view(view)
         self._calculate_screen_bounds()
+
+    def select_animation(self, name: str) -> None:
+        self._render.select_animation(name)
 
     def get_camera_distance(self) -> float:
         return self._cam_dist

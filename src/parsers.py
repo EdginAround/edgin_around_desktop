@@ -77,12 +77,14 @@ class SamlAnimation:
     def __init__(
             self,
             name: str,
+            is_looped: bool,
             length: float,
             keys: Dict[str, float],
             bones = List[SamlBone],
             objects = List[SamlBone],
         ) -> None:
         self._name = name
+        self._is_looped = is_looped
         self._length = length
         self._keys = keys
         self._bones = bones
@@ -114,10 +116,11 @@ class SamlParser:
 
     def _parse_animation(self, data: Dict[str, Any]) -> SamlAnimation:
         name = data['name']
+        is_looped = data.get('is_looped', True)
         length = data['length']
         keys = data['keys']
         bones = [self._parse_bone(bone_data) for bone_data in data['bones']]
-        return SamlAnimation(name, length, keys, bones)
+        return SamlAnimation(name, is_looped, length, keys, bones)
 
     def _parse_bone(self, data: Dict[str, Any]) -> SamlBone:
         id = data['id']
@@ -171,7 +174,12 @@ class SamlParser:
         animations: List[skeleton.Animation] = list()
         for animation in self._animations:
             bones = [self._prepare_bone(bone, animation._keys) for bone in animation._bones]
-            animations.append(skeleton.Animation(animation._name, animation._length, bones))
+            animations.append(skeleton.Animation(
+                animation._name,
+                animation._is_looped,
+                animation._length,
+                bones,
+            ))
 
         return skeleton.Skeleton(interaction, images, animations)
 

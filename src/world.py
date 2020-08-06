@@ -112,6 +112,13 @@ class World:
             self._renderers_entities[:] = \
                 [render for render in self._renderers_entities if render.get_actor_id() not in ids]
 
+    def play_animation(self, actor_id: defs.ActorId, animation_name: str):
+        renderer = self._find_renderer(actor_id)
+        if renderer is None:
+            return
+
+        renderer.select_animation(animation_name)
+
     def draw(self) -> None:
         if not self._ready and self._scene.is_ready():
             self._init_gl()
@@ -122,6 +129,15 @@ class World:
             self._setup_gl()
             self._draw()
             self._cleanup_gl()
+
+    def _find_renderer(
+            self,
+            actor_id: defs.ActorId,
+        ) -> Optional[graphics.PositionedSkeletonRenderer]:
+        for renderer in self._renderers_entities:
+            if renderer.get_actor_id() == actor_id:
+                return renderer
+        return None
 
     def _set_lookat(self, position: geometry.Point) -> None:
         self._theta = position.theta

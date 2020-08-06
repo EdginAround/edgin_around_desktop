@@ -98,8 +98,8 @@ class Bone:
             moment2 = length
 
         d = 1.0 / (moment2 - moment1)
-        w1 = d * (moment - moment1)
-        w2 = d * (moment2 - moment)
+        w1 = d * (moment2 - moment)
+        w2 = d * (moment - moment1)
 
         return Pose(
             moment=moment,
@@ -118,9 +118,10 @@ class Bone:
 
 
 class Animation:
-    def __init__(self, name: str, length: float, bones: List[Bone]) -> None:
-        self.name = name
-        self.length = length
+    def __init__(self, name: str, is_looped: bool, length: float, bones: List[Bone]) -> None:
+        self._name = name
+        self._is_looped = is_looped
+        self._length = length
 
         ids = set(bone.id for bone in bones)
         if len(ids) != len(bones):
@@ -149,13 +150,22 @@ class Animation:
 
         self._bones = sorted_bones
 
+    def is_looped(self) -> bool:
+        return self._is_looped
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_length(self) -> float:
+        return self._length
+
     def get_num_layers(self) -> int:
         return len(self._bones)
 
     def tick(self, moment: float, sources: Sources) -> List[geometry.Tile]:
         info: Dict[str, Tuple[numpy.array, Pose]] = dict()
         for bone in self._bones:
-            current_pose = bone.get_pose_at(moment, self.length)
+            current_pose = bone.get_pose_at(moment, self.get_length())
             trans = current_pose.get_transformation()
             if bone.parent is not None:
                 parent_trans, parent_pose = info[bone.parent]
@@ -186,7 +196,7 @@ class Skeleton:
         ) -> None:
         self._interaction = interation
         self._sources = Sources(images)
-        self._animations = {animation.name: animation for animation in animations}
+        self._animations = {animation.get_name(): animation for animation in animations}
 
     def get_interaction(self) -> Interaction:
         return self._interaction

@@ -156,9 +156,9 @@ class Area(gtk.GLArea):
         width, height = self.size[0], self.size[1]
 
         if width < height:
-            left, right, bottom, top = -0.5, 0.5, -0.5 * height / width, 0.5 * height / width
+            left, right, bottom, top = -0.6, 0.6, -0.1 * height / width, 1.1 * height / width
         else:
-            left, right, bottom, top = -0.5 * width / height, 0.5 * width / height, -0.5, 0.5
+            left, right, bottom, top = -0.6 * width / height, 0.6 * width / height, -0.1, 1.1
 
         return geometry.Matrices3D.orthographic(left, right, bottom, top, -100.0, 100.0)
 
