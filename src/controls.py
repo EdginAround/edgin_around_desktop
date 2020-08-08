@@ -21,8 +21,9 @@ class Controls:
         NOMODS = 0x0
         self.prev_moment: Optional[float] = None
         self.current_symbol_pressed = None
+        self.current_action: Optional[Callable[[], None]] = None
 
-        self.press_actions: PlainCallbackDict = {
+        self.global_actions: PlainCallbackDict = {
                 (key.A, NOMODS): lambda: proxy.send_move(world.get_bearing() - 0.5 * pi),
                 (key.D, NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.5 * pi),
                 (key.S, NOMODS): lambda: proxy.send_move(world.get_bearing() + 1.0 * pi),
@@ -33,6 +34,9 @@ class Controls:
                 (key.RIGHT, NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.5 * pi),
                 (key.DOWN,  NOMODS): lambda: proxy.send_move(world.get_bearing() + 1.0 * pi),
                 (key.UP,    NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.0 * pi),
+            }
+
+        self.local_actions: PlainCallbackDict = {
                 (key.BRACKETLEFT, NOMODS): lambda: world.tilt_by(-0.1 * pi),
                 (key.BRACKETRIGHT, NOMODS): lambda: world.tilt_by(0.1 * pi),
                 (key.PLUS, NOMODS): lambda: world.zoom_by(5),
@@ -66,9 +70,14 @@ class Controls:
         self.prev_moment = time.monotonic()
         key = (symbol, Controls.MOD_MASK & modifiers)
 
-        if (action1 := self.press_actions.get(key, None)) is not None:
+        if (action1 := self.local_actions.get(key, None)) is not None:
             action1()
             self.current_symbol_pressed = symbol
+
+        if (action1 := self.global_actions.get(key, None)) is not None:
+            action1()
+            self.current_symbol_pressed = symbol
+            self.current_action = action1
 
         elif (action2 := self.repeatable_actions.get(key, None)) is not None:
             self.active_actions[key] = action2
@@ -81,6 +90,7 @@ class Controls:
             if self.current_symbol_pressed == symbol:
                 action()
                 self.current_symbol_pressed = None
+                self.current_action = None
 
         elif key in self.repeatable_actions:
             del self.active_actions[key]
@@ -104,6 +114,8 @@ class Controls:
             if interval > 0:
                 for key, action in self.active_actions.items():
                     action(interval)
+                if self.current_action is not None:
+                    self.current_action()
 
         active = len(self.active_actions) > 0
         if active:
