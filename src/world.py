@@ -36,6 +36,12 @@ class World:
 
         self._renderers_entities: List[graphics.PositionedSkeletonRenderer] = list()
 
+    def get_theta(self) -> float:
+        return self._theta
+
+    def get_phi(self) -> float:
+        return self._phi
+
     def get_bearing(self) -> float:
         return self._bearing
 

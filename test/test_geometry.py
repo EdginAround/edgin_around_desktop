@@ -90,7 +90,7 @@ class GeometryTest(unittest.TestCase):
         forward  = numpy.array(( 0.0,  0.0, -1.0, 1.0)).reshape(4, 1)
         backward = numpy.array(( 0.0,  0.0,  1.0, 1.0)).reshape(4, 1)
 
-        transformation = geometry.Matrices.personal_to_global(0.0, 0.0, 0.0)
+        transformation = geometry.Matrices3D.personal_to_global(0.0, 0.0, 0.0)
         self.assert_arrays_almost_equal(transformation @ left, left)
         self.assert_arrays_almost_equal(transformation @ right, right)
         self.assert_arrays_almost_equal(transformation @ up, up)
@@ -98,7 +98,7 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ forward, forward)
         self.assert_arrays_almost_equal(transformation @ backward, backward)
 
-        transformation = geometry.Matrices.personal_to_global(0.5 * pi, 0.0, 0.0)
+        transformation = geometry.Matrices3D.personal_to_global(0.5 * pi, 0.0, 0.0)
         self.assert_arrays_almost_equal(transformation @ left, left)
         self.assert_arrays_almost_equal(transformation @ right, right)
         self.assert_arrays_almost_equal(transformation @ up, backward)
@@ -106,7 +106,7 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ forward, up)
         self.assert_arrays_almost_equal(transformation @ backward, down)
 
-        transformation = geometry.Matrices.personal_to_global(pi, 0.0, 0.0)
+        transformation = geometry.Matrices3D.personal_to_global(pi, 0.0, 0.0)
         self.assert_arrays_almost_equal(transformation @ left, left)
         self.assert_arrays_almost_equal(transformation @ right, right)
         self.assert_arrays_almost_equal(transformation @ up, down)
@@ -114,7 +114,7 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ forward, backward)
         self.assert_arrays_almost_equal(transformation @ backward, forward)
 
-        transformation = geometry.Matrices.personal_to_global(0.5 * pi, 0.5 * pi, 0.0)
+        transformation = geometry.Matrices3D.personal_to_global(0.5 * pi, 0.5 * pi, 0.0)
         self.assert_arrays_almost_equal(transformation @ left, backward)
         self.assert_arrays_almost_equal(transformation @ right, forward)
         self.assert_arrays_almost_equal(transformation @ up, right)
@@ -122,7 +122,7 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ forward, up)
         self.assert_arrays_almost_equal(transformation @ backward, down)
 
-        transformation = geometry.Matrices.personal_to_global(0.5 * pi, -0.5 * pi, 0.0)
+        transformation = geometry.Matrices3D.personal_to_global(0.5 * pi, -0.5 * pi, 0.0)
         self.assert_arrays_almost_equal(transformation @ left, forward)
         self.assert_arrays_almost_equal(transformation @ right, backward)
         self.assert_arrays_almost_equal(transformation @ up, left)
@@ -130,7 +130,7 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ forward, up)
         self.assert_arrays_almost_equal(transformation @ backward, down)
 
-        transformation = geometry.Matrices.personal_to_global(0.0, 0.0, 0.5 * pi)
+        transformation = geometry.Matrices3D.personal_to_global(0.0, 0.0, 0.5 * pi)
         self.assert_arrays_almost_equal(transformation @ left, forward)
         self.assert_arrays_almost_equal(transformation @ right, backward)
         self.assert_arrays_almost_equal(transformation @ up, up)
@@ -138,7 +138,7 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ forward, right)
         self.assert_arrays_almost_equal(transformation @ backward, left)
 
-        transformation = geometry.Matrices.personal_to_global(0.5 * pi, 1.0 * pi, pi)
+        transformation = geometry.Matrices3D.personal_to_global(0.5 * pi, 1.0 * pi, pi)
         self.assert_arrays_almost_equal(transformation @ left, left)
         self.assert_arrays_almost_equal(transformation @ right, right)
         self.assert_arrays_almost_equal(transformation @ up, forward)
@@ -146,7 +146,7 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ forward, down)
         self.assert_arrays_almost_equal(transformation @ backward, up)
 
-        transformation = geometry.Matrices.personal_to_global(0.5 * pi, 0.5 * pi, 0.5 * pi)
+        transformation = geometry.Matrices3D.personal_to_global(0.5 * pi, 0.5 * pi, 0.5 * pi)
         self.assert_arrays_almost_equal(transformation @ left, up)
         self.assert_arrays_almost_equal(transformation @ right, down)
         self.assert_arrays_almost_equal(transformation @ up, right)
