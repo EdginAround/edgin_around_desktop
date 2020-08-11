@@ -19,11 +19,13 @@ class Controls:
 
     def __init__(self, world: world.World, proxy: proxy.Proxy) -> None:
         NOMODS = 0x0
+        CTRL = key.MOD_CTRL
+        SHIFT = key.MOD_SHIFT
         self.prev_moment: Optional[float] = None
         self.current_symbol_pressed = None
         self.current_action: Optional[Callable[[], None]] = None
 
-        self.global_actions: PlainCallbackDict = {
+        self.persistent_actions: PlainCallbackDict = {
                 (key.A, NOMODS): lambda: proxy.send_move(world.get_bearing() - 0.5 * pi),
                 (key.D, NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.5 * pi),
                 (key.S, NOMODS): lambda: proxy.send_move(world.get_bearing() + 1.0 * pi),
@@ -36,13 +38,33 @@ class Controls:
                 (key.UP,    NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.0 * pi),
             }
 
-        self.local_actions: PlainCallbackDict = {
+        self.single_actions: PlainCallbackDict = {
                 (key.BRACKETLEFT, NOMODS): lambda: world.tilt_by(-0.1 * pi),
                 (key.BRACKETRIGHT, NOMODS): lambda: world.tilt_by(0.1 * pi),
                 (key.PLUS, NOMODS): lambda: world.zoom_by(5),
                 (key.NUM_ADD, NOMODS): lambda: world.zoom_by(5),
                 (key.MINUS, NOMODS): lambda: world.zoom_by(-5),
                 (key.NUM_SUBTRACT, NOMODS): lambda: world.zoom_by(-5),
+                (key._1, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 0),
+                (key._2, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 1),
+                (key._3, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 2),
+                (key._4, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 3),
+                (key._5, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 4),
+                (key._6, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 5),
+                (key._7, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 6),
+                (key._8, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 7),
+                (key._9, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 8),
+                (key._0, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 9),
+                (key.EXCLAMATION, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 0),
+                (key.AT, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 1),
+                (key.HASH, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 2),
+                (key.DOLLAR, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 3),
+                (key.PERCENT, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 4),
+                (key.ASCIICIRCUM, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 5),
+                (key.AMPERSAND, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 6),
+                (key.ASTERISK, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 7),
+                (key.PARENLEFT, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 8),
+                (key.PARENRIGHT, SHIFT): lambda: proxy.send_inventory_swap(defs.Hand.RIGHT, 9),
             }
 
         self.release_actions: PlainCallbackDict = {
@@ -70,11 +92,11 @@ class Controls:
         self.prev_moment = time.monotonic()
         key = (symbol, Controls.MOD_MASK & modifiers)
 
-        if (action1 := self.local_actions.get(key, None)) is not None:
+        if (action1 := self.single_actions.get(key, None)) is not None:
             action1()
             self.current_symbol_pressed = symbol
 
-        if (action1 := self.global_actions.get(key, None)) is not None:
+        if (action1 := self.persistent_actions.get(key, None)) is not None:
             action1()
             self.current_symbol_pressed = symbol
             self.current_action = action1

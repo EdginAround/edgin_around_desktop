@@ -6,6 +6,9 @@ from typing import List, NoReturn
 ActorId = int
 
 
+INVENTORY_SIZE: int = 6
+
+
 class Hand(Enum):
     LEFT = 0
     RIGHT = 1

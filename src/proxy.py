@@ -40,6 +40,11 @@ class Proxy:
         if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
             self._send_event(events.HandActivationEvent(receiver_id, hand, item_id))
 
+    def send_inventory_swap(self, hand: defs.Hand, inventory_index: int):
+        assert self.engine is not None
+        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
+            self._send_event(events.InventorySwapEvent(receiver_id, hand, inventory_index))
+
     def _send_event(self, event: events.Event) -> None:
         assert self.engine is not None
         self.engine.handle_event(event)

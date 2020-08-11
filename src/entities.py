@@ -115,6 +115,9 @@ class Hero(essentials.Entity):
             else:
                 self.task = tasks.PickItemTask(self.get_id(), event.object_id, event.hand)
 
+        elif isinstance(event, events.InventorySwapEvent):
+            self.task = tasks.InventorySwapTask(self.get_id(), event.hand, event.inventory_index)
+
         elif isinstance(event, events.ResumeEvent):
             self.task = essentials.IdleTask()
 

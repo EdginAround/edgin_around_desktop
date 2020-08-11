@@ -149,7 +149,7 @@ class DamageAction(Action):
         self.variant = variant
 
     def __str__(self) -> str:
-        return f'UpdateInventoryAction'
+        return f'DamageVariant'
 
     def into_animation(self) -> animations.DamageAnimation:
         return animations.DamageAnimation(self.dealer_id, self.receiver_id, self.variant)

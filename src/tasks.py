@@ -212,6 +212,36 @@ class UseItemTask(essentials.Task):
         return list()
 
 
+class InventorySwapTask(essentials.Task):
+    SWAP_DURATION = 0.01
+
+    def __init__(
+            self,
+            performer_id: essentials.EntityId,
+            hand: defs.Hand,
+            inventory_index: int,
+        ) -> None:
+        super().__init__()
+        self.performer_id = performer_id
+        self.hand = hand
+        self.inventory_index = inventory_index
+
+    def start(self, state: state.State) -> List[actions.Action]:
+        return list()
+
+    def get_job(self) -> Optional[essentials.Job]:
+        return jobs.WaitJob(self.SWAP_DURATION, [events.FinishedEvent(self.performer_id)])
+
+    def finish(self, state: state.State) -> List[actions.Action]:
+        performer = state.get_entity(self.performer_id)
+        if performer is None or performer.features.inventory is None:
+            return list()
+
+        inventory = performer.features.inventory.get()
+        inventory.swap(self.hand, self.inventory_index)
+        return [actions.UpdateInventoryAction(inventory)]
+
+
 class DieAndDrop(essentials.Task):
     DIE_DURATION = 0.01 # sec
 

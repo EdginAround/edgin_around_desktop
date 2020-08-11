@@ -8,7 +8,7 @@ class Gui(glooey.Gui):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def on_draw(self):
+    def on_draw(self) -> None:
         pass
 
 
@@ -35,43 +35,43 @@ class Window(pyglet.window.Window):
 
         self.proxy.set_ends(self.engine, self.animator)
 
-    def on_resize(self, width, height):
+    def on_resize(self, width, height) -> None:
         super().on_resize(width, height)
         self.world.resize(width, height)
 
-    def on_draw(self):
+    def on_draw(self) -> None:
         self.controls.on_draw()
         self.animator.animate()
         self.world.draw()
         self.gui.get_batch().draw()
         self.schedule_redraw()
 
-    def on_key_press(self, symbol, modifiers):
+    def on_key_press(self, symbol, modifiers) -> None:
         self.controls.handle_key_press(symbol, modifiers)
 
-    def on_key_release(self, symbol, modifiers):
+    def on_key_release(self, symbol, modifiers) -> None:
         self.controls.handle_key_release(symbol, modifiers)
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x, y, dx, dy) -> None:
         self.world.highlight(x, y)
 
-    def on_mouse_press(self, x, y, button, modifiers):
+    def on_mouse_press(self, x, y, button, modifiers) -> None:
         self.controls.handle_mouse_press(x, y, button, modifiers)
 
-    def on_mouse_release(self, x, y, button, modifiers):
+    def on_mouse_release(self, x, y, button, modifiers) -> None:
         self.controls.handle_mouse_release(x, y, button, modifiers)
 
-    def on_close(self):
+    def on_close(self) -> None:
         super().on_close()
         self.runner.stop()
 
-    def schedule_redraw(self):
+    def schedule_redraw(self) -> None:
         noop = lambda *args, **kwargs: None
         pyglet.clock.schedule_once(noop, 0.0)
 
 
 class Game:
-    def run(self):
+    def run(self) -> None:
         window = Window()
         pyglet.app.run()
 
