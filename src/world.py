@@ -1,7 +1,5 @@
-
 import math
 import numpy
-import pyglet
 
 from OpenGL import GL
 
@@ -237,6 +235,8 @@ class World:
             geometry.Matrices3D.rotation_x(0.5 * math.pi)
 
     def _setup_gl(self) -> None:
+        GL.glUseProgram(0)
+
         GL.glEnable(GL.GL_BLEND)
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glEnable(GL.GL_DEPTH_TEST)
@@ -244,12 +244,11 @@ class World:
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
 
         GL.glViewport(0, 0, self._width, self._height)
-        GL.glClearColor(0.6, 0.6, 1.0, 1)
+        GL.glClearColor(0.6, 0.6, 1.0, 1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
     def _cleanup_gl(self) -> None:
         GL.glUseProgram(0)
-        GL.glClear(GL.GL_DEPTH_BUFFER_BIT)
 
         GL.glDisable(GL.GL_BLEND)
         GL.glDisable(GL.GL_TEXTURE_2D)

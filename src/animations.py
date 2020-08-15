@@ -1,9 +1,9 @@
 import time
 
 from abc import abstractmethod
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, TYPE_CHECKING
 
-from . import defs, dials, geometry, inventory, scene, world
+from . import defs, geometry, gui, inventory, scene, world
 
 
 class AnimationName:
@@ -37,7 +37,7 @@ class Animation:
         self._expired = True
 
     @abstractmethod
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         raise NotImplementedError('This animation is not implemented')
 
 
@@ -47,7 +47,7 @@ class ConfigurationAnimation(Animation):
         self.hero_actor_id = hero_actor_id
         self.elevation_function = elevation_function
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         scene.configure(self.hero_actor_id, self.elevation_function)
         self.expire()
 
@@ -57,7 +57,7 @@ class CreateActorsAnimation(Animation):
         super().__init__(None)
         self.actors = actors
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         scene.create_actors(self.actors)
         world.create_renderers(self.actors)
         self.expire()
@@ -68,7 +68,7 @@ class DeleteActorsAnimation(Animation):
         super().__init__(None)
         self.actor_ids = actor_ids
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         scene.delete_actors(self.actor_ids)
         world.delete_renderers(self.actor_ids)
         self.expire()
@@ -91,7 +91,7 @@ class MovementAnimation(Animation):
     def get_actor_id(self) -> defs.ActorId:
         return self.actor_id
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         distance = self.speed * interval
         actor = scene.get_actor(self.actor_id)
         actor.move_by(distance, self.bearing, scene.get_radius())
@@ -109,7 +109,7 @@ class LocalizeAnimation(Animation):
     def get_actor_id(self) -> defs.ActorId:
         return self.actor_id
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         actor = scene.get_actor(self.actor_id)
         if actor is not None:
             actor.set_position(self.position)
@@ -123,8 +123,8 @@ class StatUpdateAnimation(Animation):
         self.actor_id = actor_id
         self.stats = stats
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
-        dials.set_stats(self.stats)
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
+        gui.set_stats(self.stats)
         self.expire()
 
 
@@ -134,7 +134,7 @@ class PickStartAnimation(Animation):
         self.actor_id = actor_id
         self.item_id = item_id
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         world.play_animation(self.actor_id, AnimationName.PICK)
         self.expire()
 
@@ -144,7 +144,7 @@ class PickEndAnimation(Animation):
         super().__init__(None)
         self.actor_id = actor_id
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         world.play_animation(self.actor_id, AnimationName.IDLE)
         self.expire()
 
@@ -154,8 +154,8 @@ class UpdateInventoryAnimation(Animation):
         super().__init__(None)
         self.inventory = inventory
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
-        dials.set_inventory(self.inventory)
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
+        gui.set_inventory(self.inventory)
         self.expire()
 
 
@@ -171,7 +171,7 @@ class DamageAnimation(Animation):
         self.receiver_id = receiver_id
         self.variant = variant
 
-    def tick(self, interval, scene: scene.Scene, world: world.World, dials: dials.Dials) -> None:
+    def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         # TODO: Implement animations and play damage animation here
         self.expire()
 

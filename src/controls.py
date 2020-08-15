@@ -117,7 +117,7 @@ class Controls:
         elif key in self.repeatable_actions:
             del self.active_actions[key]
 
-    def handle_mouse_press(self, x, y, button, modifiers) -> None:
+    def handle_button_press(self, x, y, button, modifiers) -> None:
         if button == pyglet.window.mouse.LEFT:
             if id := self.world.get_highlight_actor_id():
                 self.proxy.send_hand(defs.Hand.LEFT, id)
@@ -125,11 +125,11 @@ class Controls:
             if id := self.world.get_highlight_actor_id():
                 self.proxy.send_hand(defs.Hand.RIGHT, id)
 
-    def handle_mouse_release(self, x, y, button, modifiers) -> None:
+    def handle_button_release(self, x, y, button, modifiers) -> None:
         if button in (pyglet.window.mouse.LEFT, pyglet.window.mouse.RIGHT):
             self.proxy.send_conclude()
 
-    def on_draw(self) -> bool:
+    def handle_draw(self) -> bool:
         current_moment = time.monotonic()
         if self.prev_moment is not None:
             interval = current_moment - self.prev_moment

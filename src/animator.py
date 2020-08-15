@@ -1,14 +1,14 @@
-import pyglet, time
+import time
 
 from typing import Dict, List
 
-from . import animations, defs, dials, scene, world
+from . import animations, defs, gui, scene, world
 
 class Animator:
-    def __init__(self, _scene: scene.Scene, _world: world.World, _dials: dials.Dials) -> None:
+    def __init__(self, _scene: scene.Scene, _world: world.World, _gui: gui.Gui) -> None:
         self.scene = _scene
         self.world = _world
-        self.dials = _dials
+        self.gui = _gui
         self.general_animations: List[animations.Animation] = list()
         self.actor_animations: Dict[defs.ActorId, animations.Animation] = dict()
         self.prev_tick = time.monotonic()
@@ -22,10 +22,10 @@ class Animator:
 
         # Perform one animation clock tick
         for animation in self.general_animations:
-            animation.tick(tick_interval, self.scene, self.world, self.dials)
+            animation.tick(tick_interval, self.scene, self.world, self.gui)
 
         for animation in self.actor_animations.values():
-            animation.tick(tick_interval, self.scene, self.world, self.dials)
+            animation.tick(tick_interval, self.scene, self.world, self.gui)
 
         self.prev_tick = now
 

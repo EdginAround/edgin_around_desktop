@@ -5,6 +5,7 @@ from OpenGL import GL
 from typing import Any, Iterable, List
 
 IMAGE_NAMES_TILE: List[str] = ['grass', 'water']
+IMAGE_NAMES_INVENTORY: List[str] = ['axe', 'empty_slot', 'left_hand', 'log', 'right_hand', 'rocks']
 
 DIR_INVENTORY: str = './res/inventory'
 DIR_SPRITES: str = './res/sprites'
@@ -46,4 +47,7 @@ class Media:
 
     def load_tiles(self) -> None:
         self.tex = Textures(IMAGE_NAMES_TILE, DIR_TILES)
+
+    def load_inventory(self) -> None:
+        self.tex = Textures(IMAGE_NAMES_INVENTORY, DIR_INVENTORY)
 
