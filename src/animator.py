@@ -4,6 +4,7 @@ from typing import Dict, List
 
 from . import animations, defs, gui, scene, world
 
+
 class Animator:
     def __init__(self, _scene: scene.Scene, _world: world.World, _gui: gui.Gui) -> None:
         self.scene = _scene

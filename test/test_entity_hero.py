@@ -6,7 +6,7 @@ from src import actions, defs, entities, essentials, events, generator, geometry
 
 class HeroTest(common.EntityTest):
     def test_resume(self) -> None:
-        hero = entities.Hero(0, (0.0, 0.0))
+        hero = entities.Pirate(0, (0.0, 0.0))
         self.world.add_entity(hero)
 
         old, new = self.handle_event(hero, events.ResumeEvent(hero.get_id()))
@@ -24,7 +24,7 @@ class HeroTest(common.EntityTest):
         speed = 1.0
         ignored_location = geometry.Point(0.0, 0.0)
 
-        hero = entities.Hero(0, (0.0, 0.0))
+        hero = entities.Pirate(0, (0.0, 0.0))
         self.world.add_entity(hero)
         id = hero.get_id()
 
@@ -47,7 +47,7 @@ class HeroTest(common.EntityTest):
 
     def test_picking(self) -> None:
         pick_timeout = 1.0
-        hero = entities.Hero(0, (0.0, 0.0))
+        hero = entities.Pirate(0, (0.0, 0.0))
         far_object = entities.Rocks(0, (0.011, 0.011))
         close_object = entities.Rocks(0, (0.009, 0.009))
 

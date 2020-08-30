@@ -7,7 +7,7 @@ from pyglet.window import key
 
 from typing import Callable, Dict, Optional, Tuple
 
-from . import defs, proxy, world
+from . import defs, gui, proxy, world
 
 
 PlainCallbackDict = Dict[Tuple[int, int], Callable[[], None]]
@@ -17,7 +17,7 @@ IntervalCallbackDict = Dict[Tuple[int, int], Callable[[float], None]]
 class Controls:
     MOD_MASK = key.MOD_CTRL | key.MOD_SHIFT
 
-    def __init__(self, world: world.World, proxy: proxy.Proxy) -> None:
+    def __init__(self, world: world.World, gui: gui.Gui, proxy: proxy.Proxy) -> None:
         NOMODS = 0x0
         CTRL = key.MOD_CTRL
         SHIFT = key.MOD_SHIFT
@@ -45,6 +45,7 @@ class Controls:
                 (key.NUM_ADD, NOMODS): lambda: world.zoom_by(5),
                 (key.MINUS, NOMODS): lambda: world.zoom_by(-5),
                 (key.NUM_SUBTRACT, NOMODS): lambda: world.zoom_by(-5),
+                (key.C, NOMODS): lambda: gui.toggle_crafting(),
                 (key._1, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 0),
                 (key._2, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 1),
                 (key._3, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 2),
@@ -116,18 +117,6 @@ class Controls:
 
         elif key in self.repeatable_actions:
             del self.active_actions[key]
-
-    def handle_button_press(self, x, y, button, modifiers) -> None:
-        if button == pyglet.window.mouse.LEFT:
-            if id := self.world.get_highlight_actor_id():
-                self.proxy.send_hand(defs.Hand.LEFT, id)
-        elif button == pyglet.window.mouse.RIGHT:
-            if id := self.world.get_highlight_actor_id():
-                self.proxy.send_hand(defs.Hand.RIGHT, id)
-
-    def handle_button_release(self, x, y, button, modifiers) -> None:
-        if button in (pyglet.window.mouse.LEFT, pyglet.window.mouse.RIGHT):
-            self.proxy.send_conclude()
 
     def handle_draw(self) -> bool:
         current_moment = time.monotonic()

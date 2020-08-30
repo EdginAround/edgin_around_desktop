@@ -6,8 +6,8 @@ class Game:
 
         self.scene = scene.Scene()
         self.world = world.World(self.scene)
-        self.controls = controls.Controls(self.world, self.proxy)
-        self.gui = gui.Gui(self.world)
+        self.gui = gui.Gui(self.world, self.proxy)
+        self.controls = controls.Controls(self.world, self.gui, self.proxy)
         self.animator = animator.Animator(self.scene, self.world, self.gui)
         self.window = window.Window(self.gui, self.controls, self.animator)
 

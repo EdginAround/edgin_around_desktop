@@ -29,10 +29,10 @@ class Window(pyglet.window.Window):
         self._controls.handle_key_release(symbol, modifiers)
 
     def on_mouse_press(self, x, y, button, modifiers) -> None:
-        self._controls.handle_button_press(x, y, button, modifiers)
+        self._gui.handle_button_press(x, y, button, modifiers)
 
     def on_mouse_release(self, x, y, button, modifiers) -> None:
-        self._controls.handle_button_release(x, y, button, modifiers)
+        self._gui.handle_button_release(x, y, button, modifiers)
 
     def on_mouse_motion(self, x, y, dx, dy) -> None:
         self._gui.handle_mouse_motion(x, y)

@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from . import defs, geometry, graphics
+from . import defs, geometry
 
 
 class Actor:
@@ -74,5 +74,4 @@ class Scene:
         for id in actor_ids:
             if id in self.actors:
                 del self.actors[id]
-
 

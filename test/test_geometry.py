@@ -29,7 +29,6 @@ class GeometryTest(unittest.TestCase):
             computed = geometry.Coordinates.cartesian_to_spherical(*cartesian)
             self.assertEqual(expected, computed)
 
-
     def test_spherical_to_cartesian(self) -> None:
         for spherical, expected in (
             ((1.0, 0.0 * pi, 0.0 * pi), (0.0,  1.0,  0.0)),

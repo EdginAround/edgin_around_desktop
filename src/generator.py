@@ -31,12 +31,13 @@ class WorldGenerator:
 
         # Entities
         entity_list: List[essentials.Entity] = [
-            entities.Axe(4, (0.501 * math.pi, -0.001 * math.pi)),
-            entities.Hero(0, (0.500 * math.pi, 0.000 * math.pi)),
-            entities.Warrior(1, (0.499 * math.pi, 0.001 * math.pi)),
-            entities.Warrior(2, (0.498 * math.pi, 0.002 * math.pi)),
-            entities.Rocks(3, (0.497 * math.pi, 0.003 * math.pi)),
-            entities.Spruce(5, (0.493 * math.pi, -0.003 * math.pi)),
+            entities.Pirate(0, (0.500 * math.pi, 0.000 * math.pi)),
+            entities.Axe(1, (0.501 * math.pi, -0.001 * math.pi)),
+            entities.Warrior(2, (0.499 * math.pi, 0.001 * math.pi)),
+            entities.Warrior(3, (0.498 * math.pi, 0.002 * math.pi)),
+            entities.Rocks(4, (0.497 * math.pi, 0.003 * math.pi)),
+            entities.Gold(5, (0.496 * math.pi, 0.004 * math.pi)),
+            entities.Spruce(6, (0.493 * math.pi, -0.003 * math.pi)),
         ]
 
         return state.State(elevation_function, entity_list)

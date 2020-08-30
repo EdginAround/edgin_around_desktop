@@ -1,17 +1,25 @@
+import json
 from enum import Enum
 
-from typing import List, NoReturn
+from typing import Any, Dict, List, NoReturn, Union
 
 
 ActorId = int
 
 
 INVENTORY_SIZE: int = 20
+SERIALIZATION_TYPE_FIELD = '_type'
 
 
 class Hand(Enum):
     LEFT = 0
     RIGHT = 1
+
+    def other(self):
+        if self == Hand.LEFT:
+            return Hand.RIGHT
+        else:
+            return Hand.LEFT
 
 
 class DamageVariant(Enum):
@@ -33,6 +41,24 @@ class Debugable:
     def __str__(self) -> str:
         fields = {field: str(getattr(self, field)) for field in self.DEBUG_FIELDS}
         return f'{type(self).__name__}{fields}'
+
+
+class Serializable:
+    SERIALIZATION_NAME: str = '___'
+    SERIALIZATION_FIELDS: List[str] = list()
+
+    def to_dict(self) -> Dict[str, Any]:
+        fields: Dict[str, Any] = {SERIALIZATION_TYPE_FIELD: self.SERIALIZATION_NAME}
+        for field in self.SERIALIZATION_FIELDS:
+            value = getattr(self, field)
+            if isinstance(value, Serializable):
+                fields[field] = value.to_dict()
+            else:
+                fields[field] = str(value)
+        return fields
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict())
 
 
 def assert_exhaustive(x: NoReturn) -> NoReturn:

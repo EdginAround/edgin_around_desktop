@@ -5,7 +5,7 @@ from math import pi
 
 from typing import Final, Iterable, List, Optional, Set
 
-from . import defs, inventory
+from . import craft, defs, inventory
 
 
 class Feature:
@@ -90,8 +90,18 @@ class InventoryFeature(Feature):
         super().__init__()
         self.inventory = inventory.Inventory()
 
-    def store(self, hand: defs.Hand, id: defs.ActorId, image: str) -> None:
-        self.inventory.store(hand, id, image)
+    def store(
+            self,
+            hand: defs.Hand,
+            id: defs.ActorId,
+            essence: craft.Essence,
+            quantity: int,
+            codename: str,
+        ) -> None:
+        self.inventory.store(hand, id, essence, quantity, codename)
+
+    def get_free_hand(self, prefered=defs.Hand.RIGHT) -> Optional[defs.Hand]:
+        return self.inventory.get_free_hand(prefered)
 
     def get(self) -> inventory.Inventory:
         return self.inventory
@@ -104,6 +114,24 @@ class InventorableFeature(Feature):
 
     def set_stored_by(self, id: defs.ActorId) -> None:
         self.stored_by = id
+
+
+class StackableFeature(Feature):
+    def __init__(self, stack_size: int) -> None:
+        super().__init__()
+        self.stack_size = stack_size
+
+    def get_size(self) -> int:
+        return self.stack_size
+
+    def increase(self, amount: int) -> None:
+        self.stack_size += amount
+
+    def decrease(self, amount: int) -> None:
+        self.stack_size -= amount
+
+    def set_size(self, amount: int) -> None:
+        self.stack_size = amount
 
 
 class Claim(Enum):
@@ -126,6 +154,7 @@ class Features:
         self._absorption_claims: Set[Claim] = set()
 
         self.performer: Final[Optional[PerformerFeature]] = None
+        self.stackable: Final[Optional[StackableFeature]] = None
 
         self.tool_or_weapon: Final[Optional[ToolOrWeaponFeature]] = None
         self.damageable: Final[Optional[DamageableFeature]] = None
@@ -204,4 +233,9 @@ class Features:
         self._absorption_claims.add(Claim.CARGO)
         self.inventory = InventoryFeature() # type: ignore[misc]
 
+    def set_stackable(self, amount: int) -> None:
+        self.stackable = StackableFeature(amount) # type: ignore[misc]
+
+    def get_quantity(self) -> int:
+        return self.stackable.get_size() if self.stackable is not None else 1
 

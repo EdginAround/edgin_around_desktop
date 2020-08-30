@@ -34,26 +34,32 @@ class PlainRenderer:
         self._unbind()
 
     def render(self) -> None:
-        stride: Final[int] = 6
+        count: Final[int] = 6
+        stride: Final[int] = 4 * (3 + 4 + 2)
 
         self._bind()
 
-        GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 20, ctypes.c_void_p(0))
+        GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, stride, ctypes.c_void_p(0))
         GL.glEnableVertexAttribArray(0)
 
-        GL.glVertexAttribPointer(1, 2, GL.GL_FLOAT, GL.GL_FALSE, 20, ctypes.c_void_p(12))
+        GL.glVertexAttribPointer(1, 4, GL.GL_FLOAT, GL.GL_FALSE, stride, ctypes.c_void_p(12))
         GL.glEnableVertexAttribArray(1)
+
+        GL.glVertexAttribPointer(2, 2, GL.GL_FLOAT, GL.GL_FALSE, stride, ctypes.c_void_p(28))
+        GL.glEnableVertexAttribArray(2)
 
         for i, plain in enumerate(self._plains):
             if plain.texture_id is not None:
                 GL.glBindTexture(GL.GL_TEXTURE_2D, plain.texture_id)
-                GL.glDrawElements(
-                        GL.GL_TRIANGLES,
-                        stride,
-                        GL.GL_UNSIGNED_INT,
-                        ctypes.c_void_p(4 * stride * i),
-                    )
 
+            GL.glDrawElements(
+                    GL.GL_TRIANGLES,
+                    count,
+                    GL.GL_UNSIGNED_INT,
+                    ctypes.c_void_p(4 * count * i),
+                )
+
+        GL.glDisableVertexAttribArray(2)
         GL.glDisableVertexAttribArray(1)
         GL.glDisableVertexAttribArray(0)
 
@@ -78,24 +84,26 @@ class PlainRenderer:
         GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, 4 * len(indices), indices, GL.GL_STATIC_DRAW)
 
     def _prepare_vertices(self) -> numpy.array:
+        DEFAULT_COLOR = (0.0, 0.0, 0.0, 0.0)
+
         data = []
         for i, plain in enumerate(self._plains):
+            z = 0.5
             x1, x2 = plain.position.x, plain.position.x + plain.size.width
             y1, y2 = plain.position.y, plain.position.y + plain.size.height
+            r, g, b, a = plain.color.to_float_tuple() if plain.color is not None else DEFAULT_COLOR
+
             if plain.flip_vertical:
-                data.append([
-                        x1, y1, 0.5, 0.0, 0.0,
-                        x1, y2, 0.5, 0.0, 1.0,
-                        x2, y2, 0.5, 1.0, 1.0,
-                        x2, y1, 0.5, 1.0, 0.0,
-                    ])
+                t11, t12, t21, t22, t31, t32, t41, t42 = 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0
             else:
-                data.append([
-                        x1, y1, 0.5, 0.0, 1.0,
-                        x1, y2, 0.5, 0.0, 0.0,
-                        x2, y2, 0.5, 1.0, 0.0,
-                        x2, y1, 0.5, 1.0, 1.0,
-                    ])
+                t11, t12, t21, t22, t31, t32, t41, t42 = 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0
+
+            data.append([
+                    x1, y1, z, r, g, b, a, t11, t12,
+                    x1, y2, z, r, g, b, a, t21, t22,
+                    x2, y2, z, r, g, b, a, t31, t32,
+                    x2, y1, z, r, g, b, a, t41, t42,
+                ])
         return numpy.array(data, dtype=numpy.float32).flatten()
 
     def _prepare_indices(self) -> numpy.array:
@@ -163,8 +171,7 @@ class FormationGroup:
     def _refresh_view(self) -> None:
         assert self._size is not None
         left, right, bottom, top = 0, self._size.width, 0, self._size.height
-        self._view = \
-            geometry.Matrices3D.orthographic(left, right, bottom, top, -100.0, 100.0)
+        self._view = geometry.Matrices3D.orthographic(left, right, bottom, top, -100.0, 100.0)
 
     def _setup(self) -> None:
         assert self._size is not None

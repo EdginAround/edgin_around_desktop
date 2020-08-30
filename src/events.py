@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from . import defs
+from . import craft, defs
 
 
 class Event(defs.Debugable):
@@ -84,4 +84,16 @@ class DamageEvent(Event):
         self.receiver_id = receiver_id
         self.damage_amount = damage_amount
         self.damage_variant = damage_variant
+
+
+class CraftEvent(Event):
+    DEBUG_FIELDS: List[str] = []
+
+    def __init__(
+            self,
+            receiver_id: defs.ActorId,
+            assembly: craft.Assembly,
+        ) -> None:
+        super().__init__(receiver_id)
+        self.assembly = assembly
 

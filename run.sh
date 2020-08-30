@@ -3,9 +3,21 @@
 function usage() {
     echo 'Commands:'
     echo ' - mypy - runs mypy checker in the main app'
-    echo ' - mypy-tests - runs mypy checker in unit tests'
     echo ' - tests - runs unit tests'
 }
+
+function run_mypy() {
+    python -m mypy egida.py preview.py --show-error-codes $@
+}
+
+function run_mypy_tests() {
+    python -m mypy test/test_*.py --show-error-codes $@
+}
+
+function run_tests() {
+    python -m unittest $@
+}
+
 
 if (( $# > 0 )); then
     command=$1
@@ -13,13 +25,10 @@ if (( $# > 0 )); then
 
     case $command in
         'mypy')
-            python -m mypy egida.py preview.py --show-error-codes $@
-            ;;
-        'mypy-tests')
-            python -m mypy test/test_*.py --show-error-codes $@
+            run_mypy $@
             ;;
         'tests')
-            python -m unittest $@
+            run_mypy && run_mypy_tests && run_tests $@
             ;;
         *)
             echo "Command \"$command\" unknown."

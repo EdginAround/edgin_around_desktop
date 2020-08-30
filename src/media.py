@@ -5,7 +5,8 @@ from OpenGL import GL
 from typing import Any, Iterable, List
 
 IMAGE_NAMES_TILE: List[str] = ['grass', 'water']
-IMAGE_NAMES_INVENTORY: List[str] = ['axe', 'empty_slot', 'left_hand', 'log', 'right_hand', 'rocks']
+IMAGE_NAMES_INVENTORY: List[str] = ['axe', 'empty_slot', 'gold', 'hat', 'left_hand', 'log', 'right_hand',
+'rocks']
 
 DIR_INVENTORY: str = './res/inventory'
 DIR_SPRITES: str = './res/sprites'

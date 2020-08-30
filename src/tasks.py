@@ -2,7 +2,7 @@ import time
 
 from typing import List, Optional
 
-from . import actions, defs, essentials, features, events, jobs, scene, state
+from . import actions, craft, defs, essentials, features, events, jobs, scene, state
 
 
 class MovementTask(essentials.Task):
@@ -127,7 +127,13 @@ class PickItemTask(essentials.Task):
         if distance is None or self.MAX_DISTANCE < distance:
             return list()
 
-        entity.features.inventory.store(self.hand, item.get_id(), item.get_name())
+        entity.features.inventory.store(
+                self.hand,
+                item.get_id(),
+                item.get_essence(),
+                item.features.get_quantity(),
+                item.get_name(),
+            )
         item.features.inventorable.set_stored_by(entity.get_id())
         item.set_position(None)
 
@@ -242,7 +248,7 @@ class InventorySwapTask(essentials.Task):
         return [actions.UpdateInventoryAction(inventory)]
 
 
-class DieAndDrop(essentials.Task):
+class DieAndDropTask(essentials.Task):
     DIE_DURATION = 0.01 # sec
 
     def __init__(
@@ -277,4 +283,47 @@ class DieAndDrop(essentials.Task):
 
     def finish(self, state: state.State) -> List[actions.Action]:
         return list()
+
+
+class CraftTask(essentials.Task):
+    CRAFT_DURATION = 1.0 # sec
+
+    def __init__(self, crafter_id: essentials.EntityId, assembly: craft.Assembly) -> None:
+        super().__init__()
+        self._crafter_id = crafter_id
+        self._assembly = assembly
+        self._job: Optional[essentials.Job] = None
+
+    def start(self, state: state.State) -> List[actions.Action]:
+        crafter = state.get_entity(self._crafter_id)
+        if crafter is None:
+            return list()
+
+        if not crafter.features.inventory:
+            return list()
+
+        if crafter.features.inventory.get_free_hand() is None:
+            return list()
+
+        if not state.validate_assembly(self._assembly, crafter.features.inventory.get()):
+            return list()
+
+        self._job = jobs.WaitJob(self.CRAFT_DURATION, [events.FinishedEvent(self._crafter_id)])
+        return [actions.CraftStartAction(self._crafter_id)]
+
+    def get_job(self) -> Optional[essentials.Job]:
+        return self._job
+
+    def finish(self, state: state.State) -> List[actions.Action]:
+        crafter = state.get_entity(self._crafter_id)
+        if crafter is None or crafter.features.inventory is None:
+            return [actions.CraftEndAction(self._crafter_id)]
+
+        craft_result = state.craft_entity(self._assembly, crafter.features.inventory.get())
+        return [
+                actions.CreateActorsAction(craft_result.created),
+                actions.DeleteActorsAction(craft_result.deleted),
+                actions.UpdateInventoryAction(crafter.features.inventory.get()),
+                actions.CraftEndAction(self._crafter_id),
+            ]
 

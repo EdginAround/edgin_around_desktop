@@ -2,36 +2,53 @@ import random
 
 from math import pi
 
-from typing import List
+from typing import Any, Dict, List, Optional
 
-from . import actions, defs, essentials, events, features, tasks
+from . import actions, craft, defs, essentials, events, features, settings, tasks
 
 
 class Rocks(essentials.Entity):
+    CODENAME = 'rocks'
+    ESSENCE = craft.Essence.ROCKS
+
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
         self.features.set_inventorable()
+        self.features.set_stackable(1)
 
-    def get_name(self) -> str:
-        return 'rocks'
+    def handle_event(self, event: events.Event) -> None:
+        pass
+
+
+class Gold(essentials.Entity):
+    CODENAME = 'gold'
+    ESSENCE = craft.Essence.GOLD
+
+    def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
+        super().__init__(id, position)
+        self.features.set_inventorable()
+        self.features.set_stackable(1)
 
     def handle_event(self, event: events.Event) -> None:
         pass
 
 
 class Log(essentials.Entity):
+    CODENAME = 'log'
+    ESSENCE = craft.Essence.LOGS
+
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
         self.features.set_inventorable()
-
-    def get_name(self) -> str:
-        return 'log'
 
     def handle_event(self, event: events.Event) -> None:
         pass
 
 
 class Axe(essentials.Entity):
+    CODENAME = 'axe'
+    ESSENCE = craft.Essence.TOOL
+
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
         self.features.set_inventorable()
@@ -42,14 +59,14 @@ class Axe(essentials.Entity):
                 attack_damage=50,
             )
 
-    def get_name(self) -> str:
-        return 'axe'
-
     def handle_event(self, event: events.Event) -> None:
         pass
 
 
 class Spruce(essentials.Entity):
+    CODENAME = 'spruce'
+    ESSENCE = craft.Essence.PLANT
+
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
         self.features.set_damageable(
@@ -58,27 +75,25 @@ class Spruce(essentials.Entity):
                 damage_variant=defs.DamageVariant.CHOP,
             )
 
-    def get_name(self) -> str:
-        return 'spruce'
-
     def handle_event(self, event: events.Event) -> None:
         if isinstance(event, events.DamageEvent):
             assert self.features.damageable
             is_alive = self.features.damageable.handle_damage(event.damage_amount)
             if not is_alive:
-                self.task = tasks.DieAndDrop(self.get_id(), self.generate_drops())
+                self.task = tasks.DieAndDropTask(self.get_id(), self.generate_drops())
 
     def generate_drops(self) -> List[essentials.Entity]:
         assert self.position is not None
         return [Log(-1, self.position) for i in range(3)]
 
+
 class Warrior(essentials.Entity):
+    CODENAME = 'warrior'
+    ESSENCE = craft.Essence.HERO
+
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
         self.features.set_performer()
-
-    def get_name(self) -> str:
-        return 'warrior'
 
     def handle_event(self, event: events.Event) -> None:
         if isinstance(event, events.ResumeEvent) or isinstance(event, events.FinishedEvent):
@@ -86,15 +101,15 @@ class Warrior(essentials.Entity):
             self.task = tasks.WalkTask(self.get_id(), speed=1.0, bearing=bearing, duration=1.0)
 
 
-class Hero(essentials.Entity):
+class Pirate(essentials.Entity):
+    CODENAME = 'pirate'
+    ESSENCE = craft.Essence.HERO
+
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         self.task: essentials.Task
         super().__init__(id, position)
         self.features.set_inventory()
         self.features.set_eater(max_capacity=100.0, hunger_value=50.0)
-
-    def get_name(self) -> str:
-        return 'pirate'
 
     def handle_event(self, event: events.Event) -> None:
         assert self.features.inventory
@@ -118,6 +133,13 @@ class Hero(essentials.Entity):
         elif isinstance(event, events.InventorySwapEvent):
             self.task = tasks.InventorySwapTask(self.get_id(), event.hand, event.inventory_index)
 
+        elif isinstance(event, events.CraftEvent):
+            self.task = tasks.CraftTask(self.get_id(), event.assembly)
+
         elif isinstance(event, events.ResumeEvent):
             self.task = essentials.IdleTask()
+
+
+for klass in [Rocks, Gold, Log, Axe, Spruce, Warrior, Pirate]:
+    settings.ENTITIES[klass.CODENAME] = klass
 

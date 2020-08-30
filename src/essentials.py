@@ -6,12 +6,12 @@ from math import pi
 from abc import abstractmethod
 from typing import List, Optional, Union, Tuple, TYPE_CHECKING
 
-from . import actions, defs, events, features, geometry
+from . import actions, craft, defs, events, features, geometry, scene
 if TYPE_CHECKING: from . import state
 
 
 EntityId = int
-EntityPosition = Union[geometry.Point, Tuple[float, float]]
+EntityPosition = Union[geometry.Point, Tuple[float, float], None]
 
 
 class JobResult(defs.Debugable):
@@ -92,6 +92,9 @@ class IdleTask(Task):
 
 
 class Entity:
+    CODENAME = '<void>'
+    ESSENCE = craft.Essence.VOID
+
     def __init__(self, id: defs.ActorId, position: EntityPosition) -> None:
         self.id = id
         self.task: Task = IdleTask()
@@ -108,11 +111,20 @@ class Entity:
     def get_id(self) -> EntityId:
         return self.id
 
+    def get_name(self) -> str:
+        return self.CODENAME
+
+    def get_essence(self) -> craft.Essence:
+        return self.ESSENCE
+
     def get_task(self) -> Task:
         return self.task
 
     def get_position(self) -> Optional[geometry.Point]:
         return self.position
+
+    def as_actor(self) -> scene.Actor:
+        return scene.Actor(self.get_id(), self.get_position(), self.get_name())
 
     def set_position(self, position: Optional[geometry.Point]):
         self.position = position
@@ -121,8 +133,8 @@ class Entity:
         if self.position is not None:
             self.position = self.position.moved_by(distance, bearing, radius)
 
-    @abstractmethod
-    def get_name(self) -> str: pass
+    def __repr__(self) -> str:
+        return f'Entity({self.CODENAME}, {self.id})'
 
     @abstractmethod
     def handle_event(self, event): pass
