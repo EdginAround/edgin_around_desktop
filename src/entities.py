@@ -126,7 +126,7 @@ class Pirate(essentials.Entity):
         elif isinstance(event, events.HandActivationEvent):
             item_id = self.features.inventory.get().get_hand(event.hand)
             if item_id is not None:
-                self.task = tasks.UseItemTask(self.get_id(), item_id, event.object_id)
+                self.task = tasks.UseItemTask(self.get_id(), item_id, event.object_id, event.hand)
             else:
                 self.task = tasks.PickItemTask(self.get_id(), event.object_id, event.hand)
 

@@ -101,18 +101,20 @@ class UpdateInventoryAction(Action, defs.Serializable):
 
 class DamageAction(Action, defs.Serializable):
     SERIALIZATION_NAME = 'damage'
-    SERIALIZATION_FIELDS = ['dealer_id', 'receiver_id', 'variant']
+    SERIALIZATION_FIELDS = ['dealer_id', 'receiver_id', 'variant', 'hand']
 
     def __init__(
             self,
             dealer_id: defs.ActorId,
             receiver_id: defs.ActorId,
             variant: defs.DamageVariant,
+            hand: defs.Hand,
         ) -> None:
         super().__init__()
         self.dealer_id = dealer_id
         self.receiver_id = receiver_id
         self.variant = variant
+        self.hand = hand
 
 
 class CraftStartAction(Action, defs.Serializable):

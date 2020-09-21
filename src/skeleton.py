@@ -46,14 +46,14 @@ class Pose:
     def __init__(
             self,
             moment: float,
-            file_id: str,
+            source_id: str,
             position: Tuple[float, float],
             scale: Tuple[float, float],
             angle: float,
             alpha: float,
         ) -> None:
         self.moment = moment
-        self.file_id = file_id
+        self.source_id = source_id
         self.position = position
         self.scale = scale
         self.angle = angle
@@ -103,7 +103,7 @@ class Bone:
 
         return Pose(
             moment=moment,
-            file_id=pose1.file_id,
+            source_id=pose1.source_id,
             position=(
                 w1 * pose1.position[0] + w2 * pose2.position[0],
                 w1 * pose1.position[1] + w2 * pose2.position[1],
@@ -175,8 +175,8 @@ class Animation:
         tiles: List[geometry.Tile] = list()
         for id in self._index:
             trans, pose = info[id]
-            if pose.file_id is not None:
-                image = sources.get_image(pose.file_id)
+            if pose.source_id is not None:
+                image = sources.get_image(pose.source_id)
                 tiles.append(self._make_tile(image, trans))
 
         return tiles

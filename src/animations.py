@@ -10,6 +10,8 @@ class AnimationName:
     IDLE = 'idle'
     WALK = 'walk'
     PICK = 'pick'
+    SWING_LEFT = 'swing_left'
+    SWING_RIGHT = 'swing_right'
 
 
 class Animation:
@@ -177,9 +179,14 @@ class DamageAnimation(Animation):
         self.dealer_id = action.dealer_id
         self.receiver_id = action.receiver_id
         self.variant = action.variant
+        self.hand = action.hand
 
     def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         # TODO: Implement animations and play damage animation here
+        if self.hand == defs.Hand.LEFT:
+            world.play_animation(self.dealer_id, AnimationName.SWING_LEFT)
+        else:
+            world.play_animation(self.dealer_id, AnimationName.SWING_RIGHT)
         self.expire()
 
 

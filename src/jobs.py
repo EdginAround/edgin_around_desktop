@@ -88,12 +88,14 @@ class DamageJob(essentials.Job):
             dealer_id: defs.ActorId,
             receiver_id: defs.ActorId,
             tool_id: defs.ActorId,
+            hand: defs.Hand,
             finish_events: List[events.Event],
         ) -> None:
         super().__init__()
         self.dealer_id = dealer_id
         self.receiver_id = receiver_id
         self.tool_id = tool_id
+        self.hand = hand
         self.finish_events = finish_events
 
     def get_start_delay(self) -> float:
@@ -126,6 +128,7 @@ class DamageJob(essentials.Job):
                 dealer_id=self.dealer_id,
                 receiver_id=self.receiver_id,
                 variant=damage_variant,
+                hand=self.hand,
             )
         repeat = None if self.should_conclude() else self.REPEAT_INTERVAL
         return essentials.JobResult(events=[event], actions=[action], repeat=repeat)

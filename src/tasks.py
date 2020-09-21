@@ -156,11 +156,13 @@ class UseItemTask(essentials.Task):
             performer_id: essentials.EntityId,
             item_id: essentials.EntityId,
             receiver_id: Optional[essentials.EntityId],
+            hand: defs.Hand,
         ) -> None:
         super().__init__()
         self.performer_id = performer_id
         self.item_id = item_id
         self.receiver_id = receiver_id
+        self.hand = hand
         self.job: Optional[essentials.Job] = None
 
     def start(self, state: state.State) -> List[actions.Action]:
@@ -195,6 +197,7 @@ class UseItemTask(essentials.Task):
                     self.performer_id,
                     self.receiver_id,
                     self.item_id,
+                    self.hand,
                     [events.FinishedEvent(self.performer_id)],
                 )
 
