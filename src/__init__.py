@@ -1,3 +1,3 @@
-print("Welcome to E.G.I.D.A.")
+print("Welcome to Edgin' Around!")
 
 from .game import Game

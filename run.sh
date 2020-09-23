@@ -7,7 +7,7 @@ function usage() {
 }
 
 function run_mypy() {
-    python -m mypy egida.py preview.py --show-error-codes $@
+    python -m mypy edgin_around.py preview.py --show-error-codes $@
 }
 
 function run_mypy_tests() {

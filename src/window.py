@@ -4,7 +4,7 @@ from . import animator, controls, defs, gui, world
 
 
 class Window(pyglet.window.Window):
-    TITLE = 'E.G.I.D.A.'
+    TITLE = "Edgin' Around"
 
     def __init__(
             self,
