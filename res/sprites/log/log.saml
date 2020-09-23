@@ -1,0 +1,36 @@
+interaction:
+  hover_area:
+    left: -0.4
+    right: 0.4
+    top: 0.4
+    bottom: 0.0
+
+sources:
+
+  - id: "log"
+    name: "log"
+    size_x: 200
+    size_y: 200
+    pivot_x: 100
+    pivot_y: 10
+
+skeletons:
+
+  - id: "base"
+    bones:
+      - id: "main"
+        pose:
+          scale_x: 0.004
+          scale_y: 0.004
+          source_id: "log"
+
+animations:
+
+  - id: "idle"
+    skeleton_id: "base"
+    length: 1.0
+    keys:
+      idle: 0.0
+    muscles: []
+
+

@@ -1,3 +1,6 @@
-res/
+res/images/
+res/inventory/
+res/sprites/**/*.png
+res/tiles/
 __pycache__/
 session.vim

@@ -1,0 +1,268 @@
+interaction:
+  hover_area:
+    left: -250
+    right: 250
+    top: 1000
+    bottom: 0
+
+sources:
+
+  - id: "left_arm"
+    name: "left_arm"
+    size_x: 365
+    size_y: 295
+    pivot_x: 40
+    pivot_y: 250
+
+  - id: "weapon"
+    name: "weapon"
+    size_x: 372
+    size_y: 756
+    pivot_x: 130
+    pivot_y: 280
+
+  - id: "hand"
+    name: "hand"
+    size_x: 122
+    size_y: 179
+    pivot_x: 60
+    pivot_y: 90
+
+  - id: "left_leg"
+    name: "left_leg"
+    size_x: 189
+    size_y: 245
+    pivot_x: 95
+    pivot_y: 230
+
+  - id: "right_leg"
+    name: "right_leg"
+    size_x: 229
+    size_y: 254
+    pivot_x: 115
+    pivot_y: 232
+
+  - id: "body"
+    name: "body"
+    size_x: 494
+    size_y: 459
+    pivot_x: 247
+    pivot_y: 229
+
+  - id: "right_arm"
+    name: "right_arm"
+    size_x: 302
+    size_y: 375
+    pivot_x: 230
+    pivot_y: 275
+
+  - id: "head"
+    name: "head"
+    size_x: 753
+    size_y: 773
+    pivot_x: 450
+    pivot_y: 150
+
+skeletons:
+
+  - id: "base"
+    bones:
+      - id: "left_arm"
+        parent: "body"
+        pose:
+          position_x: 150
+          position_y: 110
+          source_id: "left_arm"
+      - id: "weapon"
+        parent: "left_arm"
+        pose:
+          position_x: 280
+          position_y: 90
+          source_id: "weapon"
+      - id: "hand"
+        parent: "left_arm"
+        pose:
+          position_x: 280
+          position_y: -20
+          source_id: "hand"
+      - id: "left_leg"
+        parent: "main"
+        pose:
+            position_x: 130
+            position_y: -150
+            source_id: "left_leg"
+      - id: "right_leg"
+        parent: "main"
+        pose:
+            position_x: -80
+            position_y: -150
+            source_id: "right_leg"
+      - id: "main"
+        pose:
+          position_x: 0
+          position_y: 370
+          scale_x: 0.001
+          scale_y: 0.001
+      - id: "body"
+        parent: "main"
+        pose: {}
+      - id: "torso"
+        parent: "body"
+        pose:
+          source_id: "body"
+      - id: "head"
+        parent: "body"
+        pose:
+          position_x: 0
+          position_y: 150
+          source_id: "head"
+      - id: "right_arm"
+        parent: "body"
+        pose:
+          position_x: -180
+          position_y: 50
+          source_id: "right_arm"
+
+animations:
+
+  - id: "idle"
+    skeleton_id: "base"
+    is_looped: true
+    length: 2.0
+    keys:
+      breath_out: 0.0
+      breath_in: 1.0
+    muscles:
+      - bone_id: "body"
+        timeline:
+          - key: breath_out
+            position_y: -10
+          - key: breath_in
+            position_y: 10
+      - bone_id: "torso"
+        timeline:
+          - key: breath_out
+            scale_x: 0.98
+            scale_y: 0.98
+          - key: breath_in
+            scale_x: 1.02
+            scale_y: 1.02
+      - bone_id: "left_arm"
+        timeline:
+          - key: breath_out
+            angle: -0.01
+          - key: breath_in
+            angle: 0.01
+      - bone_id: "right_arm"
+        timeline:
+          - key: breath_out
+            angle: 0.01
+          - key: breath_in
+            angle: -0.01
+
+  - id: "pick"
+    skeleton_id: "base"
+    is_looped: false
+    length: 1.2
+    keys:
+      stand: 0.0
+      squat: 0.8
+    muscles:
+      - bone_id: "main"
+        timeline:
+          - key: stand
+            scale_y: 0.0010
+          - key: squat
+            scale_y: 0.0006
+
+  - id: "walk"
+    skeleton_id: "base"
+    is_looped: true
+    length: 1.0
+    keys:
+      left: 0.00
+      down1: 0.25
+      right: 0.50
+      down2: 0.75
+    muscles:
+      - bone_id: "left_arm"
+        timeline:
+          - key: "left"
+            angle: 0.03
+          - key: "down1"
+            angle: 0
+          - key: "right"
+            angle: -0.03
+          - key: "down2"
+            angle: 0
+      - bone_id: "left_leg"
+        timeline:
+          - key: "left"
+            angle: -0.03
+          - key: "down1"
+            angle: 0
+          - key: "right"
+            angle: 0.03
+          - key: "down2"
+            angle: 0
+      - bone_id: "right_leg"
+        timeline:
+          - key: "left"
+            angle: 0.03
+          - key: "down1"
+            angle: 0
+          - key: "right"
+            angle: -0.03
+          - key: "down2"
+            angle: 0
+      - bone_id: "main"
+        timeline:
+          - key: "left"
+            position_y: 420
+          - key: "down1"
+            position_y: 370
+          - key: "right"
+            position_y: 420
+          - key: "down2"
+            position_y: 370
+      - bone_id: "right_arm"
+        timeline:
+          - key: "left"
+            angle: -0.03
+          - key: "down1"
+            angle: 0
+          - key: "right"
+            angle: 0.03
+          - key: "down2"
+            angle: 0
+
+  - id: "swing_left"
+    skeleton_id: "base"
+    is_looped: false
+    length: 1.0
+    keys:
+      down: 0.0
+      up: 0.7
+    muscles:
+      - bone_id: "left_arm"
+        timeline:
+          - key: down
+            angle: -0.1
+          - key: up
+            angle: 0.1
+
+  - id: "swing_right"
+    skeleton_id: "base"
+    is_looped: false
+    length: 1.0
+    keys:
+      down: 0.0
+      up: 0.7
+    muscles:
+      - bone_id: "right_arm"
+        timeline:
+          - key: down
+            angle: -0.1
+          - key: up
+            angle: 0.1
+

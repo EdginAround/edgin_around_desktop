@@ -1,0 +1,40 @@
+interaction:
+  hover_area:
+    left: -0.5
+    right: 0.5
+    top: 1.0
+    bottom: 0
+
+sources:
+
+  - id: "warrior"
+    name: "warrior"
+    size_x: 200
+    size_y: 200
+    pivot_x: 100
+    pivot_y: 10
+
+skeletons:
+
+  - id: "base"
+    bones:
+      - id: "main"
+        pose:
+          scale_x: 0.005
+          scale_y: 0.005
+          source_id: "warrior"
+
+animations:
+
+  - id: "idle"
+    skeleton_id: "base"
+    length: 1.0
+    keys: []
+    muscles: []
+
+  - id: "walk"
+    skeleton_id: "base"
+    length: 1.0
+    keys: []
+    muscles: []
+
