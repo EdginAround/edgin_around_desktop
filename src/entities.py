@@ -94,11 +94,29 @@ class Warrior(essentials.Entity):
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
         self.features.set_performer()
+        self.features.set_damageable(
+                start_health=200,
+                max_health=200,
+                damage_variant=defs.DamageVariant.ATTACK,
+            )
 
     def handle_event(self, event: events.Event) -> None:
         if isinstance(event, events.ResumeEvent) or isinstance(event, events.FinishedEvent):
             bearing = random.uniform(-pi, pi)
             self.task = tasks.WalkTask(self.get_id(), speed=1.0, bearing=bearing, duration=1.0)
+
+        elif isinstance(event, events.DamageEvent):
+            assert self.features.damageable
+            is_alive = self.features.damageable.handle_damage(event.damage_amount)
+            if is_alive:
+                pass # TODO: Attack the attacker back.
+
+            else:
+                self.task = tasks.DieAndDropTask(self.get_id(), self.generate_drops())
+
+    def generate_drops(self) -> List[essentials.Entity]:
+        assert self.position is not None
+        return [Rocks(defs.UNASSIGNED_ACTOR_ID, self.position) for i in range(4)]
 
 
 class Pirate(essentials.Entity):
