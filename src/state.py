@@ -93,7 +93,7 @@ class State:
 
     def add_entity(self, entity: essentials.Entity) -> None:
         id = entity.get_id()
-        while id in self.entities:
+        while id in self.entities or id < 0:
             id = random.randint(0, 1000000)
         entity.id = id
         self.entities[id] = entity

@@ -84,7 +84,7 @@ class Spruce(essentials.Entity):
 
     def generate_drops(self) -> List[essentials.Entity]:
         assert self.position is not None
-        return [Log(-1, self.position) for i in range(3)]
+        return [Log(defs.UNASSIGNED_ACTOR_ID, self.position) for i in range(3)]
 
 
 class Warrior(essentials.Entity):

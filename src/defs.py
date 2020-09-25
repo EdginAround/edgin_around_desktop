@@ -1,14 +1,14 @@
 import json
 from enum import Enum
 
-from typing import Any, Dict, List, NoReturn, Union
+from typing import Any, Dict, Final, List, NoReturn, Union
 
 
 ActorId = int
 
-
 INVENTORY_SIZE: int = 20
 SERIALIZATION_TYPE_FIELD = '_type'
+UNASSIGNED_ACTOR_ID: Final[ActorId] = -1
 
 
 class Hand(Enum):
