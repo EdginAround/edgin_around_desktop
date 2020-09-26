@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import ctypes, math, os, sys
+import argparse, ctypes, math, os, sys
 import gi, numpy
 
 gi.require_version('Gtk', '3.0')
@@ -16,6 +16,32 @@ from src import geometry, graphics, media, parsers, skeleton
 
 
 UI_FILE = "preview.ui"
+
+
+class Config:
+    def __init__(self, image_dir: str, animation_file: str, animation_name: str) -> None:
+        self.image_dir = image_dir
+        self.animation_file = animation_file
+        self.animation_name = animation_name
+
+    @staticmethod
+    def from_arguments() -> 'Config':
+        parser = argparse.ArgumentParser(description='Process some integers.')
+        parser.add_argument(
+            '--dir', dest='image_dir', type=str, required=True,
+            help='path to animation images',
+        )
+        parser.add_argument(
+            '--saml', dest='animation_file', type=str, required=True,
+             help='name of the animation file',
+        )
+        parser.add_argument(
+            '--animation', dest='animation_name', type=str, required=False, default='idle',
+             help='name of the animation to play',
+        )
+
+        args = parser.parse_args()
+        return Config(args.image_dir, args.animation_file, args.animation_name)
 
 
 class GridRenderer:
@@ -51,8 +77,9 @@ class GridRenderer:
 
 
 class Area(gtk.GLArea):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, config: Config, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self._config = config
         self.set_auto_render(True)
 
         self.size: Optional[Tuple[float, float]] = None
@@ -95,11 +122,12 @@ class Area(gtk.GLArea):
         self.loc_grid_view = GL.glGetUniformLocation(self.program_grid, "uniView")
 
         parser = parsers.SamlParser()
-        parser.parse('./res/sprites/pirate/pirate.saml')
+        parser.parse(os.path.join(self._config.image_dir, self._config.animation_file))
         self.skeleton = parser.to_skeleton()
-        self.skin = media.Textures(parser.get_images(), dir='./res/sprites/pirate/')
+        self.skin = media.Textures(parser.get_images(), dir=self._config.image_dir)
 
         self.renderer = graphics.SkeletonRenderer(self.skin, self.skeleton)
+        self.renderer.select_animation(self._config.animation_name)
         self.grid = GridRenderer()
 
         self._initialized = True
@@ -164,12 +192,12 @@ class Area(gtk.GLArea):
 
 
 class Gui:
-    def __init__(self) -> None:
+    def __init__(self, config: Config) -> None:
         self.builder = gtk.Builder()
         self.builder.add_from_file(UI_FILE)
         self.builder.connect_signals(self)
 
-        area = Area()
+        area = Area(config)
 
         box = self.builder.get_object('box1')
         box.pack_end(area, True, True, 0)
@@ -182,6 +210,7 @@ class Gui:
 
 
 if __name__ == "__main__":
-    app = Gui()
+    config = Config.from_arguments()
+    app = Gui(config)
     sys.exit(gtk.main())
 
