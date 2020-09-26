@@ -33,4 +33,27 @@ animations:
       idle: 0.0
     muscles: []
 
+  - id: "damaged"
+    skeleton_id: "base"
+    is_looped: false
+    length: 0.8
+    keys:
+      ok: 0.0
+      left1: 0.1
+      right1: 0.3
+      left2: 0.5
+      right2: 0.7
+    muscles:
+      - bone_id: "main"
+        timeline:
+          - key: ok
+            angle: 0
+          - key: left1
+            angle: 0.02
+          - key: right1
+            angle: -0.02
+          - key: left2
+            angle: 0.01
+          - key: right2
+            angle: -0.01
 

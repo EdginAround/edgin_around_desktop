@@ -38,3 +38,27 @@ animations:
     keys: []
     muscles: []
 
+  - id: "walk"
+    skeleton_id: "base"
+    length: 1.0
+    keys: []
+    muscles: []
+
+  - id: "damaged"
+    skeleton_id: "base"
+    is_looped: false
+    length: 0.6
+    keys:
+      ok: 0.0
+      left: 0.1
+      right: 0.5
+    muscles:
+      - bone_id: "main"
+        timeline:
+          - key: ok
+            angle: 0
+          - key: left
+            angle: 0.02
+          - key: right
+            angle: -0.02
+

@@ -10,6 +10,7 @@ class AnimationName:
     IDLE = 'idle'
     WALK = 'walk'
     PICK = 'pick'
+    DAMAGED = 'damaged'
     SWING_LEFT = 'swing_left'
     SWING_RIGHT = 'swing_right'
 
@@ -187,6 +188,7 @@ class DamageAnimation(Animation):
             world.play_animation(self.dealer_id, AnimationName.SWING_LEFT)
         else:
             world.play_animation(self.dealer_id, AnimationName.SWING_RIGHT)
+        world.play_animation(self.receiver_id, AnimationName.DAMAGED)
         self.expire()
 
 
