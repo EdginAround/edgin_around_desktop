@@ -108,12 +108,16 @@ class InventoryFeature(Feature):
 
 
 class InventorableFeature(Feature):
-    def __init__(self) -> None:
+    def __init__(self, volume: int) -> None:
         super().__init__()
+        self.volume = volume
         self.stored_by: Optional[defs.ActorId] = None
 
     def set_stored_by(self, id: defs.ActorId) -> None:
         self.stored_by = id
+
+    def get_volume(self) -> int:
+        return self.volume
 
 
 class StackableFeature(Feature):
@@ -225,9 +229,9 @@ class Features:
         self._absorption_claims.add(Claim.FOOD)
         self.eater = EaterFeature(max_capacity, hunger_value) # type: ignore[misc]
 
-    def set_inventorable(self) -> None:
+    def set_inventorable(self, volume: int) -> None:
         self._delivery_claims.append(Claim.CARGO)
-        self.inventorable = InventorableFeature() # type: ignore[misc]
+        self.inventorable = InventorableFeature(volume) # type: ignore[misc]
 
     def set_inventory(self) -> None:
         self._absorption_claims.add(Claim.CARGO)

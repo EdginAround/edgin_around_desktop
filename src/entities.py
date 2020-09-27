@@ -13,7 +13,7 @@ class Rocks(essentials.Entity):
 
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
-        self.features.set_inventorable()
+        self.features.set_inventorable(settings.Sizes.SMALL.value)
         self.features.set_stackable(1)
 
     def handle_event(self, event: events.Event) -> None:
@@ -26,7 +26,7 @@ class Gold(essentials.Entity):
 
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
-        self.features.set_inventorable()
+        self.features.set_inventorable(settings.Sizes.SMALL.value)
         self.features.set_stackable(1)
 
     def handle_event(self, event: events.Event) -> None:
@@ -39,7 +39,7 @@ class RawMeat(essentials.Entity):
 
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
-        self.features.set_inventorable()
+        self.features.set_inventorable(settings.Sizes.SMALL.value)
         self.features.set_stackable(1)
 
     def handle_event(self, event: events.Event) -> None:
@@ -52,7 +52,7 @@ class Log(essentials.Entity):
 
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
-        self.features.set_inventorable()
+        self.features.set_inventorable(settings.Sizes.BIG.value)
 
     def handle_event(self, event: events.Event) -> None:
         pass
@@ -64,7 +64,7 @@ class Axe(essentials.Entity):
 
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
-        self.features.set_inventorable()
+        self.features.set_inventorable(settings.Sizes.MEDIUM.value)
         self.features.set_tool_or_weapon(
                 hit_damage=10,
                 chop_damage=100,
@@ -161,8 +161,13 @@ class Pirate(essentials.Entity):
             else:
                 self.task = tasks.PickItemTask(self.get_id(), event.object_id, event.hand)
 
-        elif isinstance(event, events.InventorySwapEvent):
-            self.task = tasks.InventorySwapTask(self.get_id(), event.hand, event.inventory_index)
+        elif isinstance(event, events.InventoryUpdateEvent):
+            self.task = tasks.InventoryUpdateTask(
+                self.get_id(),
+                event.hand,
+                event.inventory_index,
+                event.update_variant,
+            )
 
         elif isinstance(event, events.CraftEvent):
             self.task = tasks.CraftTask(self.get_id(), event.assembly)

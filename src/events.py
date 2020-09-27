@@ -55,18 +55,20 @@ class HandActivationEvent(Event):
         self.object_id = object_id
 
 
-class InventorySwapEvent(Event):
-    DEBUG_FIELDS = ['hand', 'inventory_index']
+class InventoryUpdateEvent(Event):
+    DEBUG_FIELDS = ['hand', 'inventory_index', 'update_variant']
 
     def __init__(
             self,
             receiver_id: defs.ActorId,
             hand: defs.Hand,
             inventory_index: int,
+            update_variant: defs.UpdateVariant,
         ) -> None:
         super().__init__(receiver_id)
         self.hand = hand
         self.inventory_index = inventory_index
+        self.update_variant = update_variant
 
 
 class DamageEvent(Event):

@@ -42,7 +42,7 @@ class State:
             self,
             entity1: essentials.Entity,
             entity2: essentials.Entity,
-            ) -> Optional[float]:
+        ) -> Optional[float]:
         if entity1.position is not None and entity2.position is not None:
             radius = self.elevation_function.get_radius()
             return entity1.position.great_circle_distance_to(entity2.position, radius)
@@ -92,11 +92,9 @@ class State:
         return min_id
 
     def add_entity(self, entity: essentials.Entity) -> None:
-        id = entity.get_id()
-        while id in self.entities or id < 0:
-            id = random.randint(0, 1000000)
-        entity.id = id
-        self.entities[id] = entity
+        if entity.get_id() < 0:
+            entity.id = self._prepare_new_entity_id()
+        self.entities[entity.id] = entity
 
     def delete_entity(self, entity_id: defs.ActorId) -> None:
         del self.entities[entity_id]
@@ -187,6 +185,56 @@ class State:
         self.add_entity(new_entity)
         result.add_for_creation(new_entity.as_actor())
         return result
+
+    def merge_entities(
+            self,
+            inventory: inventory.Inventory,
+            hand: defs.Hand,
+            pocket_index: int,
+        ) -> None:
+        # Get entries from inventory
+        source_entry = inventory.get_hand_entry(hand)
+        target_entry = inventory.get_pocket_entry(pocket_index)
+        if source_entry is None or target_entry is None:
+            return
+
+        # Get the entities stored in the passed invetory entries
+        source_entity = self.get_entity(source_entry.id)
+        target_entity = self.get_entity(target_entry.id)
+        if source_entity is None or target_entity is None:
+            return
+
+        # Both entities have to have the same type and be stackable and inventorable
+        source_stackable = source_entity.features.stackable
+        target_stackable = target_entity.features.stackable
+        if source_stackable is None or target_stackable is None:
+            return
+
+        source_inventorable = source_entity.features.inventorable
+        target_inventorable = target_entity.features.inventorable
+        if source_inventorable is None or target_inventorable is None:
+            return
+
+        if type(source_entry) != type(target_entry):
+            return
+
+        # Calculate new quantities
+        item_volume = source_inventorable.get_volume()
+        max_target_quantity = target_entry.calc_max_quantity_for_item_volume(item_volume)
+        combined_quantity = source_stackable.get_size() + target_stackable.get_size()
+        new_target_quantity = min(max_target_quantity, combined_quantity)
+        new_source_quantity = combined_quantity - new_target_quantity
+
+        # Update entities and inventory. Remove if necessary.
+        target_stackable.set_size(new_target_quantity)
+        target_entry.set_quantity(new_target_quantity)
+
+        if new_source_quantity > 0:
+            source_stackable.set_size(new_source_quantity)
+            source_entry.set_quantity(new_source_quantity)
+        else:
+            self.delete_entity(source_entry.id)
+            inventory.remove_with_entity_id(source_entry.id)
 
     def _find_recipe_by_codename(self, codename: str) -> Optional[craft.Recipe]:
         for recipe in settings.RECIPES:

@@ -29,6 +29,13 @@ class DamageVariant(Enum):
     ATTACK = 3
 
 
+class UpdateVariant(Enum):
+    """Generic enum describing type of item stack update."""
+
+    SWAP = 0
+    MERGE = 0
+
+
 class Stats:
     def __init__(self, hunger, max_hunger) -> None:
         self.hunger = hunger

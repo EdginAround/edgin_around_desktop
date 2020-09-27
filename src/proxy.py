@@ -46,7 +46,22 @@ class Proxy:
     def send_inventory_swap(self, hand: defs.Hand, inventory_index: int) -> None:
         assert self.engine is not None
         if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
-            self._send_event(events.InventorySwapEvent(receiver_id, hand, inventory_index))
+            self._send_event(events.InventoryUpdateEvent(
+                receiver_id,
+                hand,
+                inventory_index,
+                defs.UpdateVariant.SWAP,
+            ))
+
+    def send_inventory_merge(self, hand: defs.Hand, inventory_index: int) -> None:
+        assert self.engine is not None
+        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
+            self._send_event(events.InventoryUpdateEvent(
+                receiver_id,
+                hand,
+                inventory_index,
+                defs.UpdateVariant.MERGE,
+            ))
 
     def send_craft(self, assembly: craft.Assembly) -> None:
         assert self.engine is not None

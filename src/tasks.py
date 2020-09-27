@@ -221,7 +221,7 @@ class UseItemTask(essentials.Task):
         return list()
 
 
-class InventorySwapTask(essentials.Task):
+class InventoryUpdateTask(essentials.Task):
     SWAP_DURATION = 0.01
 
     def __init__(
@@ -229,11 +229,13 @@ class InventorySwapTask(essentials.Task):
             performer_id: essentials.EntityId,
             hand: defs.Hand,
             inventory_index: int,
+            update_variant: defs.UpdateVariant,
         ) -> None:
         super().__init__()
         self.performer_id = performer_id
         self.hand = hand
         self.inventory_index = inventory_index
+        self.update_variant = update_variant
 
     def start(self, state: state.State) -> List[actions.Action]:
         return list()
@@ -247,7 +249,10 @@ class InventorySwapTask(essentials.Task):
             return list()
 
         inventory = performer.features.inventory.get()
-        inventory.swap(self.hand, self.inventory_index)
+        if self.update_variant == defs.UpdateVariant.SWAP:
+            inventory.swap(self.hand, self.inventory_index)
+        elif self.update_variant == defs.UpdateVariant.MERGE:
+            state.merge_entities(inventory, self.hand, self.inventory_index)
         return [actions.UpdateInventoryAction(inventory)]
 
 

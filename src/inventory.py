@@ -1,9 +1,11 @@
 from typing import List, Optional, Set
 
-from . import craft, defs
+from . import craft, defs, settings
 
 
 class InventoryEntry:
+    MAX_VOLUME = settings.Sizes.HUGE.value
+
     def __init__(self,
             id: defs.ActorId,
             essence: craft.Essence,
@@ -17,6 +19,17 @@ class InventoryEntry:
 
     def to_item(self) -> craft.Item:
         return craft.Item(self.id, self.essence, self.quantity)
+
+    def calc_max_quantity_for_item_volume(self, item_volume: int) -> int:
+        """
+        Calculates how many items with given volume `item_volume` can fit into the pocket
+        represented by this `InventoryEntry`.
+        """
+
+        return int(self.MAX_VOLUME / item_volume)
+
+    def set_quantity(self, quantity: int) -> None:
+        self.quantity = quantity
 
     def __repr__(self) -> str:
         return f'InventoryEntry(' \
@@ -37,6 +50,22 @@ class Inventory:
             return self.right_hand.id if self.right_hand else None
         else:
             return None
+
+    def get_hand_entry(self, hand: defs.Hand) -> Optional[InventoryEntry]:
+        if hand == defs.Hand.LEFT:
+            return self.left_hand
+        else:
+            return self.right_hand
+
+    def get_pocket(self, index: int) -> Optional[defs.ActorId]:
+        if self.is_index_valid(index):
+            entry = self.entries[index]
+            return entry.id if entry is not None else None
+        else:
+            return None
+
+    def get_pocket_entry(self, index: int) -> Optional[InventoryEntry]:
+        return self.entries[index] if self.is_index_valid(index) else None
 
     def store(
             self,
@@ -60,10 +89,11 @@ class Inventory:
             quantity: int,
             codename: str,
         ) -> None:
-        self.entries[index] = InventoryEntry(id, essence, quantity, codename)
+        if self.is_index_valid(index):
+            self.entries[index] = InventoryEntry(id, essence, quantity, codename)
 
     def swap(self, hand: defs.Hand, index: int) -> None:
-        if index < defs.INVENTORY_SIZE:
+        if self.is_index_valid(index):
             entry = self.entries[index]
             if hand == defs.Hand.LEFT:
                 self.entries[index] = self.left_hand
@@ -121,4 +151,7 @@ class Inventory:
             if entry is not None and entry.id == entity_id:
                 self.entries[i] = None
                 return
+
+    def is_index_valid(self, index: int) -> bool:
+        return -1 < index and index < defs.INVENTORY_SIZE
 

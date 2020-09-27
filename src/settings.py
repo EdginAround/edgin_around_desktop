@@ -1,6 +1,17 @@
+from enum import Enum
+
 from typing import Any, Dict
 
 from .craft import Ingredient, Material, Recipe
+
+
+class Sizes(Enum):
+    TINY = 1
+    SMALL = 5
+    MEDIUM = 10
+    BIG = 25
+    HUGE = 100
+
 
 RECIPES = [
     Recipe(

@@ -47,9 +47,9 @@ class HeroTest(common.EntityTest):
 
     def test_picking(self) -> None:
         pick_timeout = 1.0
-        hero = entities.Pirate(0, (0.0, 0.0))
-        far_object = entities.Rocks(0, (0.011, 0.011))
-        close_object = entities.Rocks(0, (0.009, 0.009))
+        hero = entities.Pirate(defs.UNASSIGNED_ACTOR_ID, (0.0, 0.0))
+        far_object = entities.Rocks(defs.UNASSIGNED_ACTOR_ID, (0.011, 0.011))
+        close_object = entities.Rocks(defs.UNASSIGNED_ACTOR_ID, (0.009, 0.009))
 
         self.world.add_entity(hero)
         self.world.add_entity(far_object)
