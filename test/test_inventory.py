@@ -6,14 +6,28 @@ from src import craft, defs, inventory
 
 class InventoryTest(unittest.TestCase):
     def test_capasity(self) -> None:
-        entry = inventory.InventoryEntry(0, craft.Essence.ROCKS, 1, '')
+        entry = inventory.EntityInfo(0, craft.Essence.ROCKS, 1, 1, '')
         self.assertEqual(entry.calc_max_quantity_for_item_volume(20), 5)
         self.assertEqual(entry.calc_max_quantity_for_item_volume(22), 4)
 
     def test_to_items(self) -> None:
         inv = inventory.Inventory()
-        inv.store(defs.Hand.LEFT, id=1, essence=craft.Essence.ROCKS, quantity=1, codename='')
-        inv.store(defs.Hand.RIGHT, id=2, essence=craft.Essence.LOGS, quantity=2, codename='')
+        inv.store(
+            defs.Hand.LEFT,
+            id=1,
+            essence=craft.Essence.ROCKS,
+            current_quantity=1,
+            item_volume=1,
+            codename='',
+        )
+        inv.store(
+            defs.Hand.RIGHT,
+            id=2,
+            essence=craft.Essence.LOGS,
+            current_quantity=2,
+            item_volume=1,
+            codename='',
+        )
 
         expected = {
             craft.Item(actor_id=1, essence=craft.Essence.ROCKS, quantity=1),
@@ -27,9 +41,30 @@ class InventoryTest(unittest.TestCase):
         INDEX: Final[int] = 0
 
         inv = inventory.Inventory()
-        inv.store(defs.Hand.LEFT, id=1, essence=craft.Essence.ROCKS, quantity=1, codename='')
-        inv.store(defs.Hand.RIGHT, id=2, essence=craft.Essence.LOGS, quantity=2, codename='')
-        inv.insert(INDEX, id=3, essence=craft.Essence.GOLD, quantity=2, codename='')
+        inv.store(
+            defs.Hand.LEFT,
+            id=1,
+            essence=craft.Essence.ROCKS,
+            current_quantity=1,
+            item_volume=1,
+            codename='',
+        )
+        inv.store(
+            defs.Hand.RIGHT,
+            id=2,
+            essence=craft.Essence.LOGS,
+            current_quantity=2,
+            item_volume=1,
+            codename='',
+        )
+        inv.insert(
+            INDEX,
+            id=3,
+            essence=craft.Essence.GOLD,
+            current_quantity=2,
+            item_volume=1,
+            codename='',
+        )
 
         inv.swap(defs.Hand.LEFT, INDEX)
 
@@ -39,8 +74,22 @@ class InventoryTest(unittest.TestCase):
 
     def test_remove_with_entity_id(self) -> None:
         inv = inventory.Inventory()
-        inv.store(defs.Hand.LEFT, id=1, essence=craft.Essence.ROCKS, quantity=1, codename='')
-        inv.store(defs.Hand.RIGHT, id=2, essence=craft.Essence.LOGS, quantity=2, codename='')
+        inv.store(
+            defs.Hand.LEFT,
+            id=1,
+            essence=craft.Essence.ROCKS,
+            current_quantity=1,
+            item_volume=1,
+            codename='',
+        )
+        inv.store(
+            defs.Hand.RIGHT,
+            id=2,
+            essence=craft.Essence.LOGS,
+            current_quantity=2,
+            item_volume=1,
+            codename='',
+        )
 
         expected = {
             craft.Item(actor_id=2, essence=craft.Essence.LOGS, quantity=2),

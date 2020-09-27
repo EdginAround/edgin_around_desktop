@@ -95,10 +95,14 @@ class InventoryFeature(Feature):
             hand: defs.Hand,
             id: defs.ActorId,
             essence: craft.Essence,
-            quantity: int,
+            current_quantity: int,
+            max_quantity: int,
             codename: str,
         ) -> None:
-        self.inventory.store(hand, id, essence, quantity, codename)
+        self.inventory.store(hand, id, essence, current_quantity, max_quantity, codename)
+
+    def store_entry(self, hand: defs.Hand, entry: inventory.EntityInfo) -> None:
+        self.inventory.store_entry(hand, entry)
 
     def get_free_hand(self, prefered=defs.Hand.RIGHT) -> Optional[defs.Hand]:
         return self.inventory.get_free_hand(prefered)

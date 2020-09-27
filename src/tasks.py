@@ -127,13 +127,7 @@ class PickItemTask(essentials.Task):
         if distance is None or self.MAX_DISTANCE < distance:
             return list()
 
-        entity.features.inventory.store(
-                self.hand,
-                item.get_id(),
-                item.get_essence(),
-                item.features.get_quantity(),
-                item.get_name(),
-            )
+        entity.features.inventory.store_entry(self.hand, item.as_info())
         item.features.inventorable.set_stored_by(entity.get_id())
         item.set_position(None)
 

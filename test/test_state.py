@@ -26,18 +26,15 @@ class StateTest(unittest.TestCase):
         entity_list: List[essentials.Entity] = [rock, gold, logs]
 
         inv = inventory.Inventory()
-        inv.insert(1, id=rock.id, essence=rock.ESSENCE, quantity=NUM_ROCK, codename='')
-        inv.insert(2, id=gold.id, essence=gold.ESSENCE, quantity=NUM_GOLD, codename='')
-        inv.insert(3, id=logs.id, essence=logs.ESSENCE, quantity=NUM_LOGS, codename='')
+        inv.insert_entry(1, rock.as_info())
+        inv.insert_entry(2, gold.as_info())
+        inv.insert_entry(3, logs.as_info())
 
         st = state.State(elevation_function, entity_list)
 
         assembly = craft.Assembly(
             recipe_codename='axe',
-            sources=[
-                [craft.Item(actor_id=rock.id, essence=rock.ESSENCE, quantity=NUM_ROCK)],
-                [craft.Item(actor_id=logs.id, essence=logs.ESSENCE, quantity=NUM_LOGS)],
-            ]
+            sources=[[rock.as_craft_item()], [logs.as_craft_item()]],
         )
 
         result = st.craft_entity(assembly, inv)
@@ -73,8 +70,8 @@ class StateTest(unittest.TestCase):
         entity_list: List[essentials.Entity] = [rock1, rock2]
 
         inv = inventory.Inventory()
-        inv.store(HAND, id=rock1.id, essence=rock1.ESSENCE, quantity=NUM1, codename='')
-        inv.insert(POCKET, id=rock2.id, essence=rock2.ESSENCE, quantity=NUM2, codename='')
+        inv.store_entry(HAND, rock1.as_info())
+        inv.insert_entry(POCKET, rock2.as_info())
 
         st = state.State(elevation_function, entity_list)
 
@@ -108,8 +105,8 @@ class StateTest(unittest.TestCase):
         entity_list: List[essentials.Entity] = [rock1, rock2]
 
         inv = inventory.Inventory()
-        inv.store(HAND, id=rock1.id, essence=rock1.ESSENCE, quantity=NUM1, codename='')
-        inv.insert(POCKET, id=rock2.id, essence=rock2.ESSENCE, quantity=NUM2, codename='')
+        inv.store_entry(HAND, rock1.as_info())
+        inv.insert_entry(POCKET, rock2.as_info())
 
         st = state.State(elevation_function, entity_list)
 

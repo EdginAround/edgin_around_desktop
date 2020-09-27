@@ -36,8 +36,9 @@ class WorldGenerator:
             entities.Warrior(2, (0.499 * math.pi, 0.001 * math.pi)),
             entities.Warrior(3, (0.498 * math.pi, 0.002 * math.pi)),
             entities.Rocks(4, (0.497 * math.pi, 0.003 * math.pi)),
-            entities.Gold(5, (0.496 * math.pi, 0.004 * math.pi)),
-            entities.Spruce(6, (0.493 * math.pi, -0.003 * math.pi)),
+            entities.Rocks(5, (0.495 * math.pi, 0.005 * math.pi)),
+            entities.Gold(6, (0.496 * math.pi, 0.004 * math.pi)),
+            entities.Spruce(7, (0.493 * math.pi, -0.003 * math.pi)),
         ]
 
         return state.State(elevation_function, entity_list)

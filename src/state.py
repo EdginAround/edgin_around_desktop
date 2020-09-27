@@ -174,13 +174,10 @@ class State:
                     self.delete_entity(entity.id)
 
         # Add the new entity
-        inventory.store(
-                free_hand,
-                new_entity.get_id(),
-                new_entity.get_essence(),
-                1,
-                new_entity.get_name(),
-            )
+        if new_entity.features.inventorable is not None:
+            inventory.store_entry(free_hand, new_entity.as_info())
+        else:
+            pass # TODO: place not inventorable entities
 
         self.add_entity(new_entity)
         result.add_for_creation(new_entity.as_actor())

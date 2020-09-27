@@ -52,7 +52,7 @@ class Log(essentials.Entity):
 
     def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
         super().__init__(id, position)
-        self.features.set_inventorable(settings.Sizes.BIG.value)
+        self.features.set_inventorable(settings.Sizes.HUGE.value)
 
     def handle_event(self, event: events.Event) -> None:
         pass

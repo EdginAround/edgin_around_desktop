@@ -33,7 +33,7 @@ class UpdateVariant(Enum):
     """Generic enum describing type of item stack update."""
 
     SWAP = 0
-    MERGE = 0
+    MERGE = 1
 
 
 class Stats:

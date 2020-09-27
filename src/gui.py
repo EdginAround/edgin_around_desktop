@@ -66,6 +66,26 @@ class MapFormation(formations.Formation):
         self.set_content(content)
 
 
+class InventoryLabel(formations_images.Label):
+    MARGIN = 0
+    PADDING = 0
+    BG_COLOR = formations.Color(0.0, 0.0, 0.0, 0.0)
+    FG_COLOR = formations.Color(0.0, 0.0, 0.0, 1.0)
+    FONT_SIZE = 16
+    FONT = "DejaVuSans-Bold.ttf"
+
+    def __init__(self, text: str, gravity: formations.Gravity) -> None:
+        super().__init__(
+            text=text,
+            gravity=gravity,
+            margin=self.MARGIN,
+            padding=self.PADDING,
+            bg_color=self.BG_COLOR,
+            fg_color=self.FG_COLOR,
+            font_size=self.FONT_SIZE,
+        )
+
+
 class HandFormation(formations.Formation):
     def __init__(self) -> None:
         super().__init__()
@@ -75,23 +95,62 @@ class HandFormation(formations.Formation):
         self.set_content(content)
 
 
-class PocketFormation(formations.Formation):
-    def __init__(self) -> None:
-        super().__init__()
+class PocketFormation(formations.Clasp):
+    def __init__(self, index: int, proxy: proxy.Proxy) -> None:
+        from .formations import Expanse, Gravity, Orientation
 
-    def set_image(self, texture_id: int) -> None:
+        super().__init__()
+        self._index = index
+        self._proxy = proxy
+
+        self._id_label = InventoryLabel(str(index + 1), formations.Gravity.START)
+        self._volume_label = InventoryLabel('', formations.Gravity.END)
+
+        id_constraint = self.Constraint(
+                orientation=Orientation.VERTICAL,
+                stretch=1.0,
+                expanse=Expanse.FIT,
+                horizontal_gravity=Gravity.START,
+                vertical_gravity=Gravity.END,
+            )
+        volume_constraint = self.Constraint(
+                orientation=Orientation.VERTICAL,
+                stretch=1.0,
+                expanse=Expanse.FIT,
+                horizontal_gravity=Gravity.END,
+                vertical_gravity=Gravity.START,
+            )
+
+        self.add(self._id_label, id_constraint)
+        self.add(self._volume_label, volume_constraint)
+
+    def set_image_and_volume(self, texture_id: int, quantity_label: str) -> None:
         content = formations.Content(_INVENTORY_IMAGE_SIZE, texture_id)
         self.set_content(content)
+        self._volume_label.set_text(quantity_label)
+
+    def on_release(self, position: formations.Position, *args) -> formations.EventResult:
+        button, modifiers = args
+
+        if button == pyglet.window.mouse.LEFT:
+            self._proxy.send_inventory_merge(defs.Hand.LEFT, self._index)
+        elif button == pyglet.window.mouse.RIGHT:
+            self._proxy.send_inventory_merge(defs.Hand.RIGHT, self._index)
+
+        return formations.EventResult.HANDLED
 
 
 class PocketsFormation(formations.Grid):
     ROWS = 2
     COLUMS = 10
 
-    def __init__(self) -> None:
+    def __init__(self, proxy: proxy.Proxy) -> None:
         super().__init__(self.ROWS, self.COLUMS)
 
-        self.pockets = [[PocketFormation() for i in range(self.COLUMS)] for j in range(self.ROWS)]
+        self.pockets = [
+            [PocketFormation(i + j * self.COLUMS, proxy) for i in range(self.COLUMS)]
+            for j in range(self.ROWS)
+        ]
         for i, row in enumerate(self.pockets):
             for j, pocket in enumerate(row):
                 self.insert(pocket, i, j)
@@ -105,11 +164,11 @@ class InventoryFormation(formations.Stripe):
     RIGHT_HAND = 'right_hand'
     EMPTY_SLOT = 'empty_slot'
 
-    def __init__(self, tex: media.Textures) -> None:
+    def __init__(self, tex: media.Textures, proxy: proxy.Proxy) -> None:
         super().__init__(formations.Orientation.HORIZONTAL)
 
         self.left_hand = HandFormation()
-        self.pockets = PocketsFormation()
+        self.pockets = PocketsFormation(proxy)
         self.right_hand = HandFormation()
 
         self.left_hand.set_image(tex[self.LEFT_HAND])
@@ -127,8 +186,11 @@ class InventoryFormation(formations.Stripe):
         self.right_hand.set_image(tex[img])
 
         for i, entry in enumerate(inventory.entries):
-            img = entry.codename if entry is not None else self.EMPTY_SLOT
-            self.pockets.get_pocket(i).set_image(tex[img])
+            img, quantity_label = self.EMPTY_SLOT, ''
+            if entry is not None:
+                img, quantity_label = \
+                    entry.codename, f'{entry.current_quantity}/{entry.max_quantity}'
+            self.pockets.get_pocket(i).set_image_and_volume(tex[img], quantity_label)
 
         self.pockets.mark_as_needs_reallocation()
 
@@ -170,14 +232,14 @@ class StatsFormation(formations.Lineup):
 
 
 class MainFormation(formations.Clasp):
-    def __init__(self, tex: media.Textures) -> None:
+    def __init__(self, tex: media.Textures, proxy: proxy.Proxy) -> None:
         from .formations import Expanse, Gravity, Orientation
 
         super().__init__()
 
         self._map_formation = MapFormation()
         self._stats_formation = StatsFormation()
-        self._inventory_formation = InventoryFormation(tex)
+        self._inventory_formation = InventoryFormation(tex, proxy)
 
         map_constraint = self.Constraint(
                 orientation=Orientation.VERTICAL,
@@ -575,7 +637,7 @@ class Gui(formations.Stack):
         self._media.load_inventory()
 
         self._world_formation = WorldFormation(world, proxy)
-        self._main_formation = MainFormation(self._media.tex)
+        self._main_formation = MainFormation(self._media.tex, proxy)
         self._crafting_formation = CraftingFormation(self._inventory, self._media.tex, proxy, self)
 
         self._crafting_formation.set_is_visible(False)

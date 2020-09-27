@@ -6,7 +6,7 @@ from math import pi
 from abc import abstractmethod
 from typing import List, Optional, Union, Tuple, TYPE_CHECKING
 
-from . import actions, craft, defs, events, features, geometry, scene
+from . import actions, craft, defs, events, features, geometry, inventory, scene
 if TYPE_CHECKING: from . import state
 
 
@@ -125,6 +125,22 @@ class Entity:
 
     def as_actor(self) -> scene.Actor:
         return scene.Actor(self.get_id(), self.get_position(), self.get_name())
+
+    def as_craft_item(self) -> craft.Item:
+        quantity = self.features.stackable.get_size() if self.features.stackable is not None else 1
+        return craft.Item(self.get_id(), self.get_essence(), quantity)
+
+    def as_info(self) -> inventory.EntityInfo:
+        item_volume = self.features.inventorable.get_volume() \
+            if self.features.inventorable is not None else 1
+
+        return inventory.EntityInfo(
+            self.get_id(),
+            self.get_essence(),
+            self.features.get_quantity(),
+            item_volume,
+            self.get_name(),
+        )
 
     def set_position(self, position: Optional[geometry.Point]):
         self.position = position
