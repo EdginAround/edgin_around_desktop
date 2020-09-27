@@ -14,6 +14,7 @@ class Essence(Enum):
     # Raw materials
     ROCKS = 'rocks'
     GOLD = 'gold'
+    MEAT = 'meat'
     LOGS = 'log'
     STICKS = 'sticks'
 

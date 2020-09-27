@@ -33,6 +33,19 @@ class Gold(essentials.Entity):
         pass
 
 
+class RawMeat(essentials.Entity):
+    CODENAME = 'raw_meat'
+    ESSENCE = craft.Essence.MEAT
+
+    def __init__(self, id: defs.ActorId, position: essentials.EntityPosition) -> None:
+        super().__init__(id, position)
+        self.features.set_inventorable()
+        self.features.set_stackable(1)
+
+    def handle_event(self, event: events.Event) -> None:
+        pass
+
+
 class Log(essentials.Entity):
     CODENAME = 'log'
     ESSENCE = craft.Essence.LOGS
@@ -116,7 +129,7 @@ class Warrior(essentials.Entity):
 
     def generate_drops(self) -> List[essentials.Entity]:
         assert self.position is not None
-        return [Rocks(defs.UNASSIGNED_ACTOR_ID, self.position) for i in range(4)]
+        return [RawMeat(defs.UNASSIGNED_ACTOR_ID, self.position) for i in range(4)]
 
 
 class Pirate(essentials.Entity):

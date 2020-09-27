@@ -1,0 +1,35 @@
+interaction:
+  hover_area:
+    left: -0.4
+    right: 0.4
+    top: 0.4
+    bottom: 0.0
+
+sources:
+
+  - id: "raw_meat"
+    name: "raw_meat"
+    size_x: 200
+    size_y: 200
+    pivot_x: 100
+    pivot_y: 10
+
+skeletons:
+
+  - id: "base"
+    bones:
+      - id: "main"
+        pose:
+          scale_x: 0.002
+          scale_y: 0.002
+          source_id: "raw_meat"
+
+animations:
+
+  - id: "idle"
+    skeleton_id: "base"
+    length: 1.0
+    keys:
+      idle: 0.0
+    muscles: []
+
