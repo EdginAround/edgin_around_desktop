@@ -83,9 +83,11 @@ class SamlSkeleton:
     def __init__(
             self,
             id: str,
+            scale: float,
             bones: List[SamlBone],
         ) -> None:
         self._id = id
+        self._scale = scale
         self._bones = bones
 
 
@@ -138,8 +140,9 @@ class SamlParser:
 
     def _parse_skeleton(self, data: Dict[str, Any]) -> SamlSkeleton:
         id = data['id']
+        scale = data['scale']
         bones = [self._parse_bone(bone_data) for bone_data in data['bones']]
-        return SamlSkeleton(id, bones)
+        return SamlSkeleton(id, scale, bones)
 
     def _parse_animation(self, data: Dict[str, Any]) -> SamlAnimation:
         id = data['id']
@@ -195,7 +198,7 @@ class SamlParser:
             source_id=data.get('source_id', None),
         )
 
-    def to_skeleton(self) -> skeleton.Skeleton:
+    def to_skeleton(self, name: str) -> skeleton.Skeleton:
         interaction = self._prepare_interaction()
 
         images = list()
@@ -214,10 +217,11 @@ class SamlParser:
                 animation._id,
                 animation._is_looped,
                 animation._length,
+                skelet._scale,
                 bones,
             ))
 
-        return skeleton.Skeleton(interaction, images, animations)
+        return skeleton.Skeleton(name, interaction, images, animations)
 
     def _prepare_interaction(self) -> skeleton.Interaction:
         return self._interaction

@@ -377,8 +377,13 @@ class Boundary2D:
 
 
 class Tile:
-    def __init__(self, name: str, position: Tuple[float, float], size: Tuple[float, float]) -> None:
-        self.name = name
+    def __init__(
+        self,
+        id: Tuple[str, ...],
+        position: Tuple[float, float],
+        size: Tuple[float, float],
+    ) -> None:
+        self.id = id
         self.points = [
             numpy.array([position[0],           position[1]          , 1.0], dtype=numpy.float32),
             numpy.array([position[0],           position[1] + size[1], 1.0], dtype=numpy.float32),
@@ -386,21 +391,37 @@ class Tile:
             numpy.array([position[0] + size[0], position[1]          , 1.0], dtype=numpy.float32),
         ]
 
-    def rotate(self, angle: float):
+    def rotate(self, angle: float) -> None:
         self.transform(Matrices2D.rotation(angle))
 
-    def translate(self, vector: Tuple[float, float]):
+    def translate(self, vector: Tuple[float, float]) -> None:
         self.transform(Matrices2D.translation(vector))
 
-    def scale(self, vector: Tuple[float, float]):
+    def scale(self, vector: Tuple[float, float]) -> None:
         self.transform(Matrices2D.scale(vector))
 
-    def transform(self, matrix: numpy.array):
+    def transform(self, matrix: numpy.array) -> None:
         for i, point in enumerate(self.points):
             self.points[i] = matrix @ point.reshape(3, 1)
 
-    def __str__(self) -> str:
-        return f'Tile(name="{self.name}", points={self.points})'
+    def rotated(self, angle: float) -> 'Tile':
+        self.rotate(angle)
+        return self
+
+    def translated(self, vector: Tuple[float, float]) -> 'Tile':
+        self.translate(vector)
+        return self
+
+    def scaled(self, vector: Tuple[float, float]) -> 'Tile':
+        self.scale(vector)
+        return self
+
+    def transformed(self, matrix: numpy.array) -> 'Tile':
+        self.transform(matrix)
+        return self
+
+    def __repr__(self) -> str:
+        return f'Tile(id={self.id}, points={self.points})'
 
 ####################################################################################################
 

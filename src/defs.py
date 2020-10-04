@@ -36,6 +36,11 @@ class UpdateVariant(Enum):
     MERGE = 1
 
 
+class Attachement(Enum):
+    LEFT_ITEM = 'left_item'
+    RIGHT_ITEM = 'right_item'
+
+
 class Stats:
     def __init__(self, hunger, max_hunger) -> None:
         self.hunger = hunger

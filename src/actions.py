@@ -92,10 +92,11 @@ class PickEndAction(Action, defs.Serializable):
 
 class UpdateInventoryAction(Action, defs.Serializable):
     SERIALIZATION_NAME = 'update_inventory'
-    SERIALIZATION_FIELDS = ['inventory']
+    SERIALIZATION_FIELDS = ['owner_id', 'inventory']
 
-    def __init__(self, inventory: inventory.Inventory) -> None:
+    def __init__(self, owner_id: defs.ActorId, inventory: inventory.Inventory) -> None:
         super().__init__()
+        self.owner_id = owner_id
         self.inventory = inventory
 
 

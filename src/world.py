@@ -3,7 +3,7 @@ import numpy
 
 from OpenGL import GL
 
-from typing import Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from . import defs, geometry, graphics, media, parsers, scene, skeleton
 
@@ -32,6 +32,7 @@ class World:
         self._media = media.Media()
         self._media.load_tiles()
 
+        self._skeletons: Dict[defs.ActorId, skeleton.Skeleton] = dict()
         self._renderers_entities: List[graphics.PositionedSkeletonRenderer] = list()
 
     def get_theta(self) -> float:
@@ -99,22 +100,31 @@ class World:
             )
 
     def create_renderers(self, actors: Iterable[scene.Actor]) -> None:
-        if self._scene.is_ready():
-            for actor in actors:
-                if actor.position is not None:
-                    skeleton, skin = self._load_skeleton_and_skin(actor.entity_name)
-                    self._renderers_entities.append(graphics.PositionedSkeletonRenderer(
-                        skin, skeleton,
-                        self._scene.get_elevation(actor.position, with_radius=True),
-                        actor.position.theta, actor.position.phi, self._bearing,
-                        actor.id,
-                        geometry.Matrices3D.identity(),
-                    ))
+        if not self._scene.is_ready():
+            return
+
+        for actor in actors:
+            skeleton = self._load_skeleton_and_skin(actor.entity_name)
+
+            self._skeletons[actor.id] = skeleton
+
+            if actor.position is not None:
+                self._renderers_entities.append(graphics.PositionedSkeletonRenderer(
+                    skeleton,
+                    self._scene.get_elevation(actor.position, with_radius=True),
+                    actor.position.theta, actor.position.phi, self._bearing,
+                    actor.id,
+                    geometry.Matrices3D.identity(),
+                ))
 
     def delete_renderers(self, ids: Iterable[defs.ActorId]) -> None:
-        if self._scene.is_ready():
-            self._renderers_entities[:] = \
-                [render for render in self._renderers_entities if render.get_actor_id() not in ids]
+        if not self._scene.is_ready():
+            return
+
+        self._skeletons = \
+            {id: skeleton for id, skeleton in self._skeletons.items() if id not in ids}
+        self._renderers_entities[:] = \
+            [render for render in self._renderers_entities if render.get_actor_id() not in ids]
 
     def play_animation(self, actor_id: defs.ActorId, animation_name: str):
         renderer = self._find_renderer(actor_id)
@@ -122,6 +132,24 @@ class World:
             return
 
         renderer.select_animation(animation_name)
+
+    def attach_skeleton(
+            self,
+            target_id: defs.ActorId,
+            source_id: Optional[defs.ActorId],
+            attachment: defs.Attachement,
+        ) -> None:
+        target_renderer = self._find_renderer(target_id)
+        if target_renderer is None:
+            return
+
+        source_skeleton = None
+        if source_id is not None:
+            source_skeleton = self._find_skeleton(source_id)
+            if source_skeleton is not None:
+                source_skeleton.select_animation('held')
+
+        target_renderer.attach_skeleton(attachment.value, source_skeleton)
 
     def draw(self) -> None:
         if not self._ready and self._scene.is_ready():
@@ -133,6 +161,9 @@ class World:
             self._setup_gl()
             self._draw()
             self._cleanup_gl()
+
+    def _find_skeleton(self, actor_id: defs.ActorId) -> Optional[skeleton.Skeleton]:
+        return self._skeletons.get(actor_id, None)
 
     def _find_renderer(
             self,
@@ -182,14 +213,14 @@ class World:
 
         return program
 
-    def _load_skeleton_and_skin(self, name: str) -> Tuple[skeleton.Skeleton, media.Textures]:
+    def _load_skeleton_and_skin(self, name: str) -> skeleton.Skeleton:
         dirpath = f'{media.DIR_SPRITES}/{name}'
         filepath = f'{dirpath}/{name}.saml'
         parser = parsers.SamlParser()
         parser.parse(filepath)
-        skeleton = parser.to_skeleton()
-        skin = media.Textures(parser.get_images(), dirpath)
-        return (skeleton, skin)
+        skeleton = parser.to_skeleton(name)
+        self._media.load_skin(name)
+        return skeleton
 
     def _init_gl(self) -> None:
         self._program_ground = self._load_program('ground_vertex', 'ground_fragment')
@@ -271,6 +302,7 @@ class World:
         # Update entities with bearing and sort them by distance from the camera
         for renderer in self._renderers_entities:
             actor = self._scene.get_actor(renderer.get_actor_id())
+            renderer.set_visibility(actor.is_visible())
             if actor.position is not None:
                 renderer.change_position_and_view(
                         self._scene.get_elevation(actor.position, with_radius=True),
@@ -281,17 +313,23 @@ class World:
         # Find an entity with cursor focus
         highlighted = False
         for renderer in self._renderers_entities:
-            highlight = False
-            if self._highlight_point is not None and not highlighted:
-                highlight = renderer.reacts_to(*self._highlight_point)
-                highlighted = highlighted or highlight
-                self._highlight_actor_id = renderer.get_actor_id() if highlight else None
-            renderer.set_highlight(highlight)
+            if renderer.is_visible():
+                highlight = False
+                if self._highlight_point is not None and not highlighted:
+                    highlight = renderer.reacts_to(*self._highlight_point)
+                    highlighted = highlighted or highlight
+                    self._highlight_actor_id = renderer.get_actor_id() if highlight else None
+                renderer.set_highlight(highlight)
 
         # Draw entities
         GL.glUseProgram(self._program_entities)
         GL.glUniformMatrix4fv(self._loc_entities_view, 1, GL.GL_TRUE, self._view)
 
         for renderer in self._renderers_entities[::-1]:
-            renderer.render(self._loc_entities_highlight, self._loc_entities_model)
+            if renderer.is_visible():
+                renderer.render(
+                    self._loc_entities_highlight,
+                    self._loc_entities_model,
+                    self._media.skins,
+                )
 

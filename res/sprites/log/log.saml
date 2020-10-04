@@ -17,11 +17,10 @@ sources:
 skeletons:
 
   - id: "base"
+    scale: 0.004
     bones:
       - id: "main"
         pose:
-          scale_x: 0.004
-          scale_y: 0.004
           source_id: "log"
 
 animations:

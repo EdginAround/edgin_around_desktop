@@ -133,11 +133,8 @@ class PickItemTask(essentials.Task):
 
         result = [
                 actions.PickEndAction(self.who_id),
-                actions.UpdateInventoryAction(entity.features.inventory.get()),
+                actions.UpdateInventoryAction(self.who_id, entity.features.inventory.get()),
             ]
-
-        if self.what_id is not None:
-            result.append(actions.DeleteActorsAction([self.what_id]))
 
         return result
 
@@ -247,7 +244,7 @@ class InventoryUpdateTask(essentials.Task):
             inventory.swap(self.hand, self.inventory_index)
         elif self.update_variant == defs.UpdateVariant.MERGE:
             state.merge_entities(inventory, self.hand, self.inventory_index)
-        return [actions.UpdateInventoryAction(inventory)]
+        return [actions.UpdateInventoryAction(self.performer_id, inventory)]
 
 
 class DieAndDropTask(essentials.Task):
@@ -325,7 +322,7 @@ class CraftTask(essentials.Task):
         return [
                 actions.CreateActorsAction(craft_result.created),
                 actions.DeleteActorsAction(craft_result.deleted),
-                actions.UpdateInventoryAction(crafter.features.inventory.get()),
+                actions.UpdateInventoryAction(self._crafter_id, crafter.features.inventory.get()),
                 actions.CraftEndAction(self._crafter_id),
             ]
 

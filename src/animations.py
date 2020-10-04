@@ -167,10 +167,20 @@ class PickEndAnimation(Animation):
 class UpdateInventoryAnimation(Animation):
     def __init__(self, action: actions.UpdateInventoryAction) -> None:
         super().__init__(None)
+        self.owner_id = action.owner_id
         self.inventory = action.inventory
 
     def tick(self, interval, scene: scene.Scene, world: world.World, gui: gui.Gui) -> None:
         gui.set_inventory(self.inventory)
+
+        scene.hide_actors(self.inventory.get_all_ids())
+
+        left_item = self.inventory.get_hand(defs.Hand.LEFT)
+        world.attach_skeleton(self.owner_id, left_item, defs.Attachement.LEFT_ITEM)
+
+        right_item = self.inventory.get_hand(defs.Hand.RIGHT)
+        world.attach_skeleton(self.owner_id, right_item, defs.Attachement.RIGHT_ITEM)
+
         self.expire()
 
 

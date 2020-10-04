@@ -14,13 +14,6 @@ sources:
     pivot_x: 40
     pivot_y: 250
 
-  - id: "weapon"
-    name: "weapon"
-    size_x: 372
-    size_y: 756
-    pivot_x: 130
-    pivot_y: 280
-
   - id: "hand"
     name: "hand"
     size_x: 122
@@ -66,6 +59,7 @@ sources:
 skeletons:
 
   - id: "base"
+    scale: 0.001
     bones:
       - id: "left_arm"
         parent: "body"
@@ -73,12 +67,11 @@ skeletons:
           position_x: 150
           position_y: 110
           source_id: "left_arm"
-      - id: "weapon"
+      - id: "left_item"
         parent: "left_arm"
         pose:
           position_x: 280
           position_y: 90
-          source_id: "weapon"
       - id: "hand"
         parent: "left_arm"
         pose:
@@ -101,8 +94,6 @@ skeletons:
         pose:
           position_x: 0
           position_y: 370
-          scale_x: 0.001
-          scale_y: 0.001
       - id: "body"
         parent: "main"
         pose: {}
@@ -116,6 +107,11 @@ skeletons:
           position_x: 0
           position_y: 150
           source_id: "head"
+      - id: "right_item"
+        parent: "right_arm"
+        pose:
+          position_x: 20
+          position_y: -120
       - id: "right_arm"
         parent: "body"
         pose:
@@ -171,9 +167,9 @@ animations:
       - bone_id: "main"
         timeline:
           - key: stand
-            scale_y: 0.0010
+            scale_y: 1.0
           - key: squat
-            scale_y: 0.0006
+            scale_y: 0.6
 
   - id: "walk"
     skeleton_id: "base"

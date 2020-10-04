@@ -61,8 +61,7 @@ class SolidPolyhedronRenderer:
 class SkeletonRenderer:
     DEFAULT_ANIMATION = 'idle'
 
-    def __init__(self, skinset: media.Textures, skeleton: skeleton.Skeleton) -> None:
-        self._skinset = skinset
+    def __init__(self, skeleton: skeleton.Skeleton) -> None:
         self._skeleton = skeleton
 
         self._vao = GL.glGenVertexArrays(1)
@@ -80,30 +79,40 @@ class SkeletonRenderer:
     def select_animation(self, name: str) -> None:
         if name != self._animation_name:
             self._start_moment = time.monotonic()
-            self._animation = self._skeleton.get_animation(name)
-            if self._animation is None:
+            selected = self._skeleton.select_animation(name)
+            if not selected:
                 print(f'Animation "{name}" not found')
-                self._animation = self._skeleton.get_animation(self.DEFAULT_ANIMATION)
+                self._skeleton.select_default_animation()
                 self._animation_name = self.DEFAULT_ANIMATION
             else:
                 self._animation_name = name
 
+    def get_skeleton(self) -> skeleton.Skeleton:
+        return self._skeleton
+
+    def attach_skeleton(
+            self,
+            element_name: str,
+            source_skeleton: Optional[skeleton.Skeleton]):
+        self._skeleton.attach_skeleton(element_name, source_skeleton)
+
     def __del__(self) -> None:
         GL.glDeleteBuffers(2, [self._vbo, self._ibo])
 
-    def render(self) -> None:
-        assert self._animation is not None
+    def render(self, skins: media.Skins) -> None:
+        assert self._skeleton.has_selected_animation()
 
         stride: Final[int] = 6
 
         interval = time.monotonic() - self._start_moment
-        if not self._animation.is_looped() and interval > self._animation.get_length():
-            self.select_animation(self.DEFAULT_ANIMATION)
+        if not self._skeleton.is_animation_looped() \
+        and interval > self._skeleton.get_animation_length():
+            self._skeleton.select_default_animation()
             interval = 0.0
 
         self._bind()
 
-        tiles = self._animation.tick(interval, self._skeleton.get_sources())
+        tiles = self._skeleton.tick(interval)
         self._load_vertices(tiles)
 
         GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 20, ctypes.c_void_p(0))
@@ -113,7 +122,7 @@ class SkeletonRenderer:
         GL.glEnableVertexAttribArray(1)
 
         for i, tile in enumerate(tiles):
-            texture_id = self._skinset[tile.name]
+            texture_id = skins.get(tile.id)
             if texture_id is not None:
                 GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
                 GL.glDrawElements(
@@ -167,7 +176,6 @@ class SkeletonRenderer:
 
 class PositionedSkeletonRenderer:
     def __init__(self,
-            skinset: media.Textures,
             skeleton: skeleton.Skeleton,
             radius: float,
             theta: float,
@@ -177,13 +185,17 @@ class PositionedSkeletonRenderer:
             view: numpy.array,
         ) -> None:
         self._highlight = False
+        self._is_visible = True
         self._actor_id = actor_id
         self._skeleton = skeleton
-        self._render = SkeletonRenderer(skinset, skeleton)
+        self._render = SkeletonRenderer(skeleton)
         self.change_position_and_view(radius, theta, phi, bearing, view)
 
     def set_highlight(self, highlight: bool) -> None:
         self._highlight = highlight
+
+    def set_visibility(self, is_visible: bool) -> None:
+        self._is_visible = is_visible
 
     def change_position(self, radius: float, theta: float, phi: float, bearing: float) -> None:
         self._update_position(radius, theta, phi, bearing)
@@ -208,6 +220,18 @@ class PositionedSkeletonRenderer:
     def select_animation(self, name: str) -> None:
         self._render.select_animation(name)
 
+    def is_visible(self) -> bool:
+        return self._is_visible
+
+    def get_skeleton(self) -> skeleton.Skeleton:
+        return self._render.get_skeleton()
+
+    def attach_skeleton(
+            self,
+            element_name: str,
+            source_skeleton: Optional[skeleton.Skeleton]):
+        self._render.attach_skeleton(element_name, source_skeleton)
+
     def get_camera_distance(self) -> float:
         return self._cam_dist
 
@@ -223,9 +247,9 @@ class PositionedSkeletonRenderer:
         return self._cam_left < x and x < self._cam_right \
            and self._cam_bottom < y and y < self._cam_top
 
-    def render(self, loc_highlight, loc_model) -> None:
+    def render(self, loc_highlight, loc_model, skins: media.Skins) -> None:
         self._setup_rendering(loc_highlight, loc_model)
-        self._render.render()
+        self._render.render(skins)
 
     def _update_position(self, radius: float, theta: float, phi: float, bearing: float) -> None:
         self._radius = radius

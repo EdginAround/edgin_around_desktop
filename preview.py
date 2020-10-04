@@ -19,8 +19,15 @@ UI_FILE = "preview.ui"
 
 
 class Config:
-    def __init__(self, image_dir: str, animation_file: str, animation_name: str) -> None:
-        self.image_dir = image_dir
+    def __init__(
+            self,
+            image_dir: str,
+            skin_name: str,
+            animation_file: str,
+            animation_name: str,
+        ) -> None:
+        self.sprite_dir = image_dir
+        self.skin_name = skin_name
         self.animation_file = animation_file
         self.animation_name = animation_name
 
@@ -28,20 +35,24 @@ class Config:
     def from_arguments() -> 'Config':
         parser = argparse.ArgumentParser(description='Process some integers.')
         parser.add_argument(
-            '--dir', dest='image_dir', type=str, required=True,
-            help='path to animation images',
+            '--dir', dest='sprite_dir', type=str, required=True,
+            help='Path to sprites',
+        )
+        parser.add_argument(
+            '--skin', dest='skin_name', type=str, required=True,
+            help='Name of the skin to use. Must be a directory in sprite directory',
         )
         parser.add_argument(
             '--saml', dest='animation_file', type=str, required=True,
-             help='name of the animation file',
+             help='Name of the animation file',
         )
         parser.add_argument(
             '--animation', dest='animation_name', type=str, required=False, default='idle',
-             help='name of the animation to play',
+             help='Name of the animation to play',
         )
 
         args = parser.parse_args()
-        return Config(args.image_dir, args.animation_file, args.animation_name)
+        return Config(args.sprite_dir, args.skin_name, args.animation_file, args.animation_name)
 
 
 class GridRenderer:
@@ -122,11 +133,17 @@ class Area(gtk.GLArea):
         self.loc_grid_view = GL.glGetUniformLocation(self.program_grid, "uniView")
 
         parser = parsers.SamlParser()
-        parser.parse(os.path.join(self._config.image_dir, self._config.animation_file))
-        self.skeleton = parser.to_skeleton()
-        self.skin = media.Textures(parser.get_images(), dir=self._config.image_dir)
+        parser.parse(os.path.join(
+            self._config.sprite_dir,
+            self._config.skin_name,
+            self._config.animation_file,
+        ))
+        self.skeleton = parser.to_skeleton(self._config.skin_name)
 
-        self.renderer = graphics.SkeletonRenderer(self.skin, self.skeleton)
+        self.media = media.Media()
+        self.media.load_skin(self._config.skin_name)
+
+        self.renderer = graphics.SkeletonRenderer(self.skeleton)
         self.renderer.select_animation(self._config.animation_name)
         self.grid = GridRenderer()
 
@@ -167,7 +184,7 @@ class Area(gtk.GLArea):
         GL.glUseProgram(self.program_entity)
         GL.glUniformMatrix4fv(self.loc_entity_view, 1, GL.GL_TRUE, view)
         GL.glUniformMatrix4fv(self.loc_entity_model, 1, GL.GL_TRUE, model)
-        self.renderer.render()
+        self.renderer.render(self.media.skins)
         GL.glUseProgram(0)
 
         GL.glUseProgram(self.program_grid)

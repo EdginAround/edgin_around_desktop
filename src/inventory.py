@@ -1,4 +1,4 @@
-from typing import List, Optional, Set
+from typing import Iterable, List, Optional, Set
 
 from . import craft, defs, settings
 
@@ -71,6 +71,21 @@ class Inventory:
 
     def get_pocket_entry(self, index: int) -> Optional[EntityInfo]:
         return self.entries[index] if self.is_index_valid(index) else None
+
+    def get_all_ids(self) -> Iterable[defs.ActorId]:
+        result = list()
+
+        if self.left_hand is not None:
+            result.append(self.left_hand.id)
+
+        if self.right_hand is not None:
+            result.append(self.right_hand.id)
+
+        for entry in self.entries:
+            if entry is not None:
+                result.append(entry.id)
+
+        return result
 
     def store(
             self,

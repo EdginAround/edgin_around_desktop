@@ -17,6 +17,9 @@ class Actor:
     def get_id(self) -> defs.ActorId:
         return self.id
 
+    def is_visible(self) -> bool:
+        return self.position is not None
+
     def set_position(self, position: geometry.Point) -> None:
         self.position = position
 
@@ -74,4 +77,9 @@ class Scene:
         for id in actor_ids:
             if id in self.actors:
                 del self.actors[id]
+
+    def hide_actors(self, actor_ids: Iterable[defs.ActorId]) -> None:
+        for id in actor_ids:
+            actor = self.get_actor(id)
+            actor.position = None
 

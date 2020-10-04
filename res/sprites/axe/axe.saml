@@ -17,11 +17,10 @@ sources:
 skeletons:
 
   - id: "base"
+    scale: 0.002
     bones:
       - id: "main"
         pose:
-          scale_x: 0.002
-          scale_y: 0.002
           source_id: "axe"
 
 animations:
@@ -32,4 +31,17 @@ animations:
     keys:
       idle: 0.0
     muscles: []
+
+  - id: "held"
+    skeleton_id: "base"
+    is_looped: true
+    length: 1.0
+    keys:
+      idle: 0.0
+    muscles:
+      - bone_id: "main"
+        timeline:
+          - key: idle
+            position_x: -30.0
+            position_y: -70.0
 
