@@ -23,10 +23,10 @@ class Hand(Enum):
 
 
 class DamageVariant(Enum):
-    HIT = 0
-    CHOP = 1
-    SMASH = 2
-    ATTACK = 3
+    HIT = 'hit'
+    CHOP = 'chop'
+    SMASH = 'smash'
+    ATTACK = 'attack'
 
 
 class UpdateVariant(Enum):

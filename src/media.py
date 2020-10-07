@@ -11,6 +11,7 @@ IMAGE_NAMES_INVENTORY: List[str] = [
 ]
 
 DIR_INVENTORY: str = './res/inventory'
+DIR_SOUNDS: str = './res/effects'
 DIR_SPRITES: str = './res/sprites'
 DIR_TILES: str = './res/tiles'
 
@@ -64,6 +65,22 @@ class Skins:
 
     def get(self, key: Tuple[str, ...]) -> int:
         return self._images[key]
+
+
+class Sounds:
+    def __init__(self, dir: str = DIR_SOUNDS) -> None:
+        self._sounds: Dict[str, pyglet.media.Player] = dict()
+        self._load(dir)
+
+    def _load(self, dir: str) -> None:
+        for item in os.listdir(dir):
+            path = os.path.join(dir, item)
+            if os.path.isfile(path) and item.endswith('.mp3'):
+                self._sounds[item[:-4]] = pyglet.media.load(path, streaming=False)
+
+    def play(self, sound_name: str) -> None:
+        if sound_name in self._sounds:
+            self._sounds[sound_name].play()
 
 
 class Media:

@@ -2,14 +2,18 @@ import time
 
 from typing import Dict, List
 
-from . import animations, defs, gui, scene, world
+from . import animating, animations, defs, gui, media, scene, world
 
 
 class Animator:
     def __init__(self, _scene: scene.Scene, _world: world.World, _gui: gui.Gui) -> None:
-        self.scene = _scene
-        self.world = _world
-        self.gui = _gui
+        self.context = animating.AnimationContext(
+            scene=_scene,
+            world=_world,
+            gui=_gui,
+            sounds=media.Sounds(),
+        )
+
         self.general_animations: List[animations.Animation] = list()
         self.actor_animations: Dict[defs.ActorId, animations.Animation] = dict()
         self.prev_tick = time.monotonic()
@@ -23,10 +27,10 @@ class Animator:
 
         # Perform one animation clock tick
         for animation in self.general_animations:
-            animation.tick(tick_interval, self.scene, self.world, self.gui)
+            animation.tick(tick_interval, self.context)
 
         for animation in self.actor_animations.values():
-            animation.tick(tick_interval, self.scene, self.world, self.gui)
+            animation.tick(tick_interval, self.context)
 
         self.prev_tick = now
 
