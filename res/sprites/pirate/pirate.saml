@@ -12,49 +12,49 @@ sources:
     size_x: 365
     size_y: 295
     pivot_x: 40
-    pivot_y: 250
+    pivot_y: 45
 
   - id: "hand"
     name: "hand"
     size_x: 122
     size_y: 179
     pivot_x: 60
-    pivot_y: 90
+    pivot_y: 89
 
   - id: "left_leg"
     name: "left_leg"
     size_x: 189
     size_y: 245
     pivot_x: 95
-    pivot_y: 230
+    pivot_y: 15
 
   - id: "right_leg"
     name: "right_leg"
     size_x: 229
     size_y: 254
     pivot_x: 115
-    pivot_y: 232
+    pivot_y: 22
 
   - id: "body"
     name: "body"
     size_x: 494
     size_y: 459
     pivot_x: 247
-    pivot_y: 229
+    pivot_y: 230
 
   - id: "right_arm"
     name: "right_arm"
     size_x: 302
     size_y: 375
     pivot_x: 230
-    pivot_y: 275
+    pivot_y: 40
 
   - id: "head"
     name: "head"
     size_x: 753
     size_y: 773
     pivot_x: 450
-    pivot_y: 150
+    pivot_y: 623
 
 skeletons:
 
@@ -116,7 +116,7 @@ skeletons:
         parent: "body"
         pose:
           position_x: -180
-          position_y: 50
+          position_y: 120
           source_id: "right_arm"
 
 animations:

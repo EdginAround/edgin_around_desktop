@@ -12,7 +12,7 @@ sources:
     size_x: 200
     size_y: 200
     pivot_x: 100
-    pivot_y: 20
+    pivot_y: 180
 
 skeletons:
 

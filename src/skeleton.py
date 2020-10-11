@@ -211,7 +211,8 @@ class Animation:
         return tiles
 
     def _make_tile(self, skin: str, image: Image, transformation: numpy.array) -> geometry.Tile:
-        tile = geometry.Tile((skin, image.name), (-image.pivot[0], -image.pivot[1]), image.size)
+        pivot = (-image.pivot[0], image.pivot[1] - image.size[1])
+        tile = geometry.Tile((skin, image.name), pivot, image.size)
         tile.transform(transformation)
         return tile
 
