@@ -18,6 +18,11 @@ function run_tests() {
     python -m unittest $@
 }
 
+function run_pack_resources() {
+    ZIPFILE=edgin_around_resources.zip
+    rm -f $ZIPFILE
+    zip -r $ZIPFILE res -x *.saml
+}
 
 if (( $# > 0 )); then
     command=$1
@@ -29,6 +34,9 @@ if (( $# > 0 )); then
             ;;
         'tests')
             run_mypy && run_mypy_tests && run_tests $@
+            ;;
+        'pack-res')
+            run_pack_resources
             ;;
         *)
             echo "Command \"$command\" unknown."
