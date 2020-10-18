@@ -93,7 +93,7 @@ class State:
 
     def add_entity(self, entity: essentials.Entity) -> None:
         if entity.get_id() < 0:
-            entity.id = self._prepare_new_entity_id()
+            entity.id = self.generate_new_entity_id()
         self.entities[entity.id] = entity
 
     def delete_entity(self, entity_id: defs.ActorId) -> None:
@@ -147,7 +147,7 @@ class State:
         # Crafting new entity
         new_entity = self._construct_entity(
                 recipe.get_codename(),
-                self._prepare_new_entity_id(),
+                self.generate_new_entity_id(),
                 None,
             )
         if new_entity is None:
@@ -239,7 +239,7 @@ class State:
                 return recipe
         return None
 
-    def _prepare_new_entity_id(self) -> defs.ActorId:
+    def generate_new_entity_id(self) -> defs.ActorId:
         while True:
             id = defs.ActorId(random.randint(0, sys.maxsize))
             if id not in self.entities:

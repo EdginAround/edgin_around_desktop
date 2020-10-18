@@ -1,8 +1,12 @@
-import numpy
-
+import abc, enum
+from dataclasses import dataclass
 from math import asin, atan2, cos, degrees, pi, radians, sin, sqrt, tan
 
-from typing import Callable, List, Tuple
+import marshmallow, numpy
+from marshmallow import fields as mf
+from marshmallow_oneofschema import OneOfSchema
+
+from typing import Callable, Iterable, Iterator, List, Optional, Set, Tuple, cast
 
 ####################################################################################################
 
@@ -101,7 +105,15 @@ class Coordinate:
 class Point:
     """Position expressed in spherical coordinates."""
 
-    def __init__(self, theta, phi) -> None:
+    class Schema(marshmallow.Schema):
+        theta = mf.Float()
+        phi = mf.Float()
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            return Point(**data)
+
+    def __init__(self, theta: float, phi: float) -> None:
         self.theta = theta
         self.phi = phi
 
@@ -129,35 +141,33 @@ class Point:
 
 ####################################################################################################
 
+Point3D = Tuple[float, float, float]
+Indices3D = Tuple[int, int, int]
+
 class Polyhedron:
     """"Polyhedron data container."""
 
-    def __init__(self, vertices, triangles, colors=None):
+    def __init__(self, vertices: Iterable[Point3D], triangles: Iterable[Indices3D]) -> None:
         # An ordered list of points.
-        self.vertices = list(vertices)
+        self.vertices: List[Point3D] = list(vertices)
 
         # A set of triangles defined as tuples of indices.
-        self.triangles = {tuple(sorted(point)) for point in triangles}
+        self.triangles: Set[Indices3D] = \
+            set(cast(Indices3D, tuple(sorted(indices))) for indices in triangles)
 
-        # An ordered list of colors.
-        self.colors = colors
-
-    def get_vertices(self):
+    def get_vertices(self) -> Iterator[Tuple[float, float, float]]:
         for vertex in self.vertices:
             yield vertex
 
-    def get_triangles(self):
+    def get_triangles(self) -> Iterator[Tuple[float, float, float]]:
         for triangle in self.triangles:
             yield triangle
 
-    def get_vertex(self, index):
-        return self.vertices[index], self.colors[index]
-
-    def rescale(self, stretch: Callable[[Point], float]):
+    def rescale(self, stretch: Callable[[Point], float]) -> None:
         for i, vertex in enumerate(self.vertices):
             r, theta, phi = Coordinates.cartesian_to_spherical(*vertex)
             multiplier = stretch(Point(theta, phi)) / r
-            self.vertices[i] = [v * multiplier for v in vertex]
+            self.vertices[i] = cast(Point3D, tuple(cast(float, v * multiplier) for v in vertex))
 
 ####################################################################################################
 
@@ -165,7 +175,7 @@ class Structures:
     """Structures generator class."""
 
     @staticmethod
-    def icosahedron():
+    def icosahedron() -> Polyhedron:
         """Icosahedron generation function"""
 
         f = (sqrt(5.0) + 1.0) / 2.0
@@ -173,18 +183,18 @@ class Structures:
         a = b * f
 
         return Polyhedron(
-                 (( 0, b, a), ( 0, b,-a), ( 0,-b, a), ( 0,-b,-a),
-                  ( a, 0, b), ( a, 0,-b), (-a, 0, b), (-a, 0,-b),
-                  ( b, a, 0), ( b,-a, 0), (-b, a, 0), (-b,-a, 0)),
-             set(((0,  2, 4), (0,  2, 6), (1,  3,  5), (1,  3,  7),
-                  (4,  5, 8), (4,  5, 9), (6,  7, 10), (6,  7, 11),
-                  (8, 10, 0), (8, 10, 1), (9, 11,  2), (9, 11,  3),
-                  (4,  8, 0), (5,  8, 1), (4,  9,  2), (5,  9,  3),
-                  (6, 10, 0), (7, 10, 1), (6, 11,  2), (7, 11,  3)))
-            )
+            (( 0, b, a), ( 0, b,-a), ( 0,-b, a), ( 0,-b,-a),
+             ( a, 0, b), ( a, 0,-b), (-a, 0, b), (-a, 0,-b),
+             ( b, a, 0), ( b,-a, 0), (-b, a, 0), (-b,-a, 0)),
+            {(0,  2, 4), (0,  2, 6), (1,  3,  5), (1,  3,  7),
+             (4,  5, 8), (4,  5, 9), (6,  7, 10), (6,  7, 11),
+             (8, 10, 0), (8, 10, 1), (9, 11,  2), (9, 11,  3),
+             (4,  8, 0), (5,  8, 1), (4,  9,  2), (5,  9,  3),
+             (6, 10, 0), (7, 10, 1), (6, 11,  2), (7, 11,  3)}
+        )
 
     @staticmethod
-    def sphere(n, radius=1.0):
+    def sphere(n, radius=1.0) -> Polyhedron:
         """Sphere generation function"""
 
         def scaled(vector):
@@ -425,23 +435,110 @@ class Tile:
 
 ####################################################################################################
 
+class _Terrains(enum.Enum):
+    HILLS = 'hills'
+    RANGES = 'ranges'
+    CONTINENTS = 'continents'
+
+
+class _TerrainInfo(abc.ABC):
+    def evaluate(self, pos: Point, radius: float) -> float:
+        pass
+
+
+@dataclass
+class Hills(_TerrainInfo):
+    origin: Point
+
+    class Schema(marshmallow.Schema):
+        origin = mf.Nested(Point.Schema)
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            return Hills(**data)
+
+    def evaluate(self, pos: Point, radius: float) -> float:
+        return 0.003 * radius \
+            * (pos.theta / pi - 1) * sin(50 * pos.phi) \
+            * (pos.theta / pi - 2) * sin(50 * pos.theta)
+
+
+@dataclass
+class Ranges(_TerrainInfo):
+    origin: Point
+
+    class Schema(marshmallow.Schema):
+        origin = mf.Nested(Point.Schema)
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            return Ranges(**data)
+
+    def evaluate(self, pos: Point, radius: float) -> float:
+        return 0.006 * radius * cos(10 * pos.theta + pi) * cos(10 * pos.phi)
+
+
+@dataclass
+class Continents(_TerrainInfo):
+    origin: Point
+
+    class Schema(marshmallow.Schema):
+        origin = mf.Nested(Point.Schema)
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            return Continents(**data)
+
+    def evaluate(self, pos: Point, radius: float) -> float:
+        return 0.009 * radius * sin(pos.theta) * sin(pos.phi)
+
+
+class _TerrainSchema(OneOfSchema):
+    type_schemas = {
+        _Terrains.HILLS.value: Hills.Schema,
+        _Terrains.RANGES.value: Ranges.Schema,
+        _Terrains.CONTINENTS.value: Continents.Schema,
+    }
+
+    type_names = {
+        Hills: _Terrains.HILLS.value,
+        Ranges: _Terrains.RANGES.value,
+        Continents: _Terrains.CONTINENTS.value,
+    }
+
+    def get_obj_type(self, obj):
+        name = self.type_names.get(type(obj), None)
+        if name is not None:
+            return name
+        else:
+            raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+
 class ElevationFunction:
+    class Schema(marshmallow.Schema):
+        radius = mf.Float()
+        terrain = mf.List(mf.Nested(_TerrainSchema))
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            schema = _TerrainSchema()
+            ef = ElevationFunction(data['radius'])
+            ef.terrain = data['terrain']
+            return ef
+
     def __init__(self, radius: float) -> None:
         self.radius = radius
-        self.functions: List[Callable[[Point], float]] = list()
+        self.terrain: List[_TerrainInfo] = list()
 
-    def add(self, function: Callable[[Point], float]) -> None:
-        self.functions.append(function)
+    def add(self, terrain: _TerrainInfo) -> None:
+        self.terrain.append(terrain)
 
     def get_radius(self) -> float:
         return self.radius
 
     def evaluate_without_radius(self, position: Point) -> float:
-        return sum(f(position) for f in self.functions)
+        return sum(terrain.evaluate(position, self.radius) for terrain in self.terrain)
 
     def evaluate_with_radius(self, position: Point) -> float:
         return self.radius + self.evaluate_without_radius(position)
-
-    def __call__(self, position: Point) -> float:
-        return self.evaluate_with_radius(position)
 

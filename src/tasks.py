@@ -1,6 +1,6 @@
 import time
 
-from typing import List, Optional
+from typing import List, Optional, Sequence, cast
 
 from . import actions, craft, defs, essentials, features, events, jobs, scene, state
 
@@ -15,13 +15,13 @@ class MovementTask(essentials.Task):
         self.bearing = bearing
         self.job = jobs.MovementJob(entity_id, self.speed, self.bearing, self.TIMEOUT, list())
 
-    def start(self, state: state.State) -> List[actions.Action]:
+    def start(self, state: state.State) -> Sequence[actions.Action]:
         return [actions.MovementAction(self.entity_id, self.speed, self.bearing, self.TIMEOUT)]
 
     def get_job(self) -> Optional[essentials.Job]:
         return self.job
 
-    def finish(self, state: state.State) -> List[actions.Action]:
+    def finish(self, state: state.State) -> Sequence[actions.Action]:
         assert self.job is not None
 
         entity = state.get_entity(self.entity_id)
@@ -49,7 +49,7 @@ class WalkTask(essentials.Task):
         self.bearing = bearing
         self.duration = duration
 
-    def start(self, state: state.State) -> List[actions.Action]:
+    def start(self, state: state.State) -> Sequence[actions.Action]:
         return [actions.MovementAction(self.entity_id, self.speed, self.bearing, self.duration)]
 
     def get_job(self) -> Optional[essentials.Job]:
@@ -61,7 +61,7 @@ class WalkTask(essentials.Task):
                 [events.FinishedEvent(self.entity_id)],
             )
 
-    def finish(self, state: state.State) -> List[actions.Action]:
+    def finish(self, state: state.State) -> Sequence[actions.Action]:
         entity = state.get_entity(self.entity_id)
         assert entity is not None
         position = entity.get_position()
@@ -85,7 +85,7 @@ class PickItemTask(essentials.Task):
         self.hand = hand
         self.job: Optional[essentials.Job] = None
 
-    def start(self, state: state.State) -> List[actions.Action]:
+    def start(self, state: state.State) -> Sequence[actions.Action]:
         if self.what_id is None:
             self.what_id = state.find_closest_delivering_within \
                 (self.who_id, [features.Claim.CARGO], self.MAX_DISTANCE)
@@ -111,7 +111,7 @@ class PickItemTask(essentials.Task):
     def get_job(self) -> Optional[essentials.Job]:
         return self.job
 
-    def finish(self, state: state.State) -> List[actions.Action]:
+    def finish(self, state: state.State) -> Sequence[actions.Action]:
         if self.what_id is None:
             return list()
 
@@ -131,7 +131,7 @@ class PickItemTask(essentials.Task):
         item.features.inventorable.set_stored_by(entity.get_id())
         item.set_position(None)
 
-        result = [
+        result: Sequence[actions.Action] = [
                 actions.PickEndAction(self.who_id),
                 actions.UpdateInventoryAction(self.who_id, entity.features.inventory.get()),
             ]
@@ -156,7 +156,7 @@ class UseItemTask(essentials.Task):
         self.hand = hand
         self.job: Optional[essentials.Job] = None
 
-    def start(self, state: state.State) -> List[actions.Action]:
+    def start(self, state: state.State) -> Sequence[actions.Action]:
         performer = state.get_entity(self.performer_id)
         item = state.get_entity(self.item_id)
         if performer is None or item is None:
@@ -208,7 +208,7 @@ class UseItemTask(essentials.Task):
     def get_job(self) -> Optional[essentials.Job]:
         return self.job
 
-    def finish(self, state: state.State) -> List[actions.Action]:
+    def finish(self, state: state.State) -> Sequence[actions.Action]:
         return list()
 
 
@@ -228,13 +228,13 @@ class InventoryUpdateTask(essentials.Task):
         self.inventory_index = inventory_index
         self.update_variant = update_variant
 
-    def start(self, state: state.State) -> List[actions.Action]:
+    def start(self, state: state.State) -> Sequence[actions.Action]:
         return list()
 
     def get_job(self) -> Optional[essentials.Job]:
         return jobs.WaitJob(self.SWAP_DURATION, [events.FinishedEvent(self.performer_id)])
 
-    def finish(self, state: state.State) -> List[actions.Action]:
+    def finish(self, state: state.State) -> Sequence[actions.Action]:
         performer = state.get_entity(self.performer_id)
         if performer is None or performer.features.inventory is None:
             return list()
@@ -260,7 +260,7 @@ class DieAndDropTask(essentials.Task):
         self.drops = drops
         self.job = jobs.WaitJob(self.DIE_DURATION, [events.FinishedEvent(self.dier_id)])
 
-    def start(self, state: state.State) -> List[actions.Action]:
+    def start(self, state: state.State) -> Sequence[actions.Action]:
         dier = state.get_entity(self.dier_id)
         if dier is None:
             return list()
@@ -269,7 +269,7 @@ class DieAndDropTask(essentials.Task):
             state.add_entity(drop)
 
         drops = [scene.Actor(
-                drop.id, drop.position, drop.get_name(),
+                drop.id, drop.get_name(), drop.position,
             ) for drop in self.drops]
 
         return [
@@ -280,7 +280,7 @@ class DieAndDropTask(essentials.Task):
     def get_job(self) -> Optional[essentials.Job]:
         return self.job
 
-    def finish(self, state: state.State) -> List[actions.Action]:
+    def finish(self, state: state.State) -> Sequence[actions.Action]:
         return list()
 
 
@@ -293,7 +293,7 @@ class CraftTask(essentials.Task):
         self._assembly = assembly
         self._job: Optional[essentials.Job] = None
 
-    def start(self, state: state.State) -> List[actions.Action]:
+    def start(self, state: state.State) -> Sequence[actions.Action]:
         crafter = state.get_entity(self._crafter_id)
         if crafter is None:
             return list()
@@ -313,7 +313,7 @@ class CraftTask(essentials.Task):
     def get_job(self) -> Optional[essentials.Job]:
         return self._job
 
-    def finish(self, state: state.State) -> List[actions.Action]:
+    def finish(self, state: state.State) -> Sequence[actions.Action]:
         crafter = state.get_entity(self._crafter_id)
         if crafter is None or crafter.features.inventory is None:
             return [actions.CraftEndAction(self._crafter_id)]

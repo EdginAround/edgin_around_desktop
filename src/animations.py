@@ -1,7 +1,6 @@
-import json, time
+import abc, json, time
 
-from abc import abstractmethod
-from typing import Iterable, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, Iterable, List, Optional, TYPE_CHECKING
 
 from . import actions, animating, defs, geometry, inventory
 
@@ -15,7 +14,7 @@ class AnimationName:
     SWING_RIGHT = 'swing_right'
 
 
-class Animation:
+class Animation(abc.ABC):
     def __init__(self, timeout):
         self._expired = False
         self.start_time = time.monotonic()
@@ -39,7 +38,7 @@ class Animation:
     def expire(self) -> None:
         self._expired = True
 
-    @abstractmethod
+    @abc.abstractmethod
     def tick(self, interval, context: animating.AnimationContext) -> None:
         raise NotImplementedError('This animation is not implemented')
 
@@ -207,7 +206,7 @@ class DamageAnimation(Animation):
         self.expire()
 
 
-_ANIMITION_CONSTRUCTORS = {
+_ANIMATION_CONSTRUCTORS: Dict[type, Any] = {
         actions.ConfigurationAction: ConfigurationAnimation,
         actions.CraftStartAction: CraftStartAnimation,
         actions.CraftEndAction: CraftEndAnimation,
@@ -222,7 +221,9 @@ _ANIMITION_CONSTRUCTORS = {
         actions.DamageAction: DamageAnimation,
     }
 
-def animation_from_action(action: actions.Action) -> Optional[Animation]:
-    return _ANIMITION_CONSTRUCTORS[type(action)](action)
 
+def animation_from_action(action: actions.Action) -> Optional[Animation]:
+    """Converts an `Action` into an `Animation`."""
+
+    return _ANIMATION_CONSTRUCTORS[type(action)](action)
 

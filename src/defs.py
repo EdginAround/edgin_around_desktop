@@ -1,11 +1,17 @@
 import json
 from enum import Enum
 
+import marshmallow
+from marshmallow import fields as mf
+
 from typing import Any, Dict, Final, List, NoReturn, Union
 
 
 ActorId = int
 
+VERSION = (0, 0, 1)
+PORT_BROADCAST = 54300
+PORT_DATA = 54301
 INVENTORY_SIZE: int = 20
 SERIALIZATION_TYPE_FIELD = '_type'
 UNASSIGNED_ACTOR_ID: Final[ActorId] = -1
@@ -42,7 +48,15 @@ class Attachement(Enum):
 
 
 class Stats:
-    def __init__(self, hunger, max_hunger) -> None:
+    class Schema(marshmallow.Schema):
+        hunger = mf.Float()
+        max_hunger = mf.Float()
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            return Stats(**data)
+
+    def __init__(self, hunger: float, max_hunger: float) -> None:
         self.hunger = hunger
         self.max_hunger = max_hunger
 
@@ -57,17 +71,14 @@ class Debugable:
 
 class Serializable:
     SERIALIZATION_NAME: str = '___'
-    SERIALIZATION_FIELDS: List[str] = list()
+
+    class Schema(marshmallow.Schema):
+        pass
 
     def to_dict(self) -> Dict[str, Any]:
-        fields: Dict[str, Any] = {SERIALIZATION_TYPE_FIELD: self.SERIALIZATION_NAME}
-        for field in self.SERIALIZATION_FIELDS:
-            value = getattr(self, field)
-            if isinstance(value, Serializable):
-                fields[field] = value.to_dict()
-            else:
-                fields[field] = str(value)
-        return fields
+        result = self.Schema().dump(self)
+        result[SERIALIZATION_TYPE_FIELD] = self.SERIALIZATION_NAME
+        return result
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict())

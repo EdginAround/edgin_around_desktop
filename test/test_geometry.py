@@ -3,9 +3,13 @@ import numpy
 
 from math import pi, atan, sqrt, radians
 
+from typing import Any, Dict
+
+from . import common
+
 from src import geometry
 
-class GeometryTest(unittest.TestCase):
+class GeometryTest(common.SerdeTest):
     def assert_tuples_almost_equal(self, t1, t2) -> None:
         self.assertEqual(len(t1), len(t1))
         for e1, e2 in zip(t1, t2):
@@ -152,4 +156,26 @@ class GeometryTest(unittest.TestCase):
         self.assert_arrays_almost_equal(transformation @ down, left)
         self.assert_arrays_almost_equal(transformation @ forward, forward)
         self.assert_arrays_almost_equal(transformation @ backward, backward)
+
+    def test_elevation_function_serialization(self) -> None:
+        """Checks if the elevation function is serialized and deserialized properly."""
+
+        original: Dict[str, Any] = {
+            'radius': 999,
+            'terrain': [{
+                'type': 'hills',
+                'origin': { 'theta': 0.0, 'phi': 0.0 },
+            }, {
+                'type': 'hills',
+                'origin': { 'theta': 1.0, 'phi': 1.0 },
+            }, {
+                'type': 'ranges',
+                'origin': { 'theta': 5.0, 'phi': 2.0 },
+            }, {
+                'type': 'continents',
+                'origin': { 'theta': 8.0, 'phi': 9.0 },
+            }]
+        }
+
+        self.assert_serde(original, geometry.ElevationFunction.Schema(), geometry.ElevationFunction)
 

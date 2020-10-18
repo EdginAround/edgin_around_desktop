@@ -1,35 +1,19 @@
-import time
+import math, time
 
 from typing import Dict, Optional, Union
 
-from . import actions, defs, essentials, events, executor, jobs, scene, state
-
-HERO_ENTITY_ID = 0
-
-
-class ClientInfo:
-    def __init__(self, hero_entity_id):
-        self.hero_entity_id = hero_entity_id
+from . import actions, defs, entities, essentials, events, executor, gateway, jobs, scene, state
 
 
 class Engine(executor.Processor):
-    def __init__(self, proxy, state: state.State) -> None:
+    def __init__(self, state: state.State, gateway: gateway.Gateway) -> None:
+        self.gateway = gateway
         self.state = state
-        self.proxy = proxy
-        self.clients: Dict[int, ClientInfo] = dict()
-
-    def get_hero_id_for_client(self, client_id: int) -> Optional[defs.ActorId]:
-        client = self.clients[client_id]
-        return client.hero_entity_id if client is not None else None
 
     def start(self, scheduler) -> None:
         self.scheduler = scheduler
         for entity in self.state.get_entities():
-            entity_id = entity.get_id()
-            if entity.features.performer is not None:
-                self.run(None, trigger=events.ResumeEvent(entity_id))
-            if entity.features.eater is not None:
-                self.run(None, trigger=jobs.HungerDrainJob(entity_id))
+            self._handle_entity(entity)
 
     def run(self, handle: Optional[int], **kwargs) -> None:
         trigger: Union[events.Event, essentials.Job] = kwargs['trigger']
@@ -43,24 +27,28 @@ class Engine(executor.Processor):
     def handle_event(self, event: events.Event) -> None:
         self.run(None, trigger=event)
 
-    def handle_connection(self, client_id: int) -> None:
+    def handle_connection(self, client_id: int) -> defs.ActorId:
+        # TODO: craeate a custom hero
+        hero = entities.Pirate(defs.UNASSIGNED_ACTOR_ID, (0.500 * math.pi, 0.000 * math.pi))
+        self.state.add_entity(hero)
+        self._handle_entity(hero)
+
+        hero_entity_id = hero.get_id()
         actors = [scene.Actor(
-                entity.id, entity.position, entity.get_name(),
+                entity.id, entity.get_name(), entity.position,
             ) for entity in self.state.get_entities()]
 
-        self.clients[client_id] = ClientInfo(HERO_ENTITY_ID)
+        self.gateway.associate_actor(client_id, hero_entity_id)
+        self.gateway.send_configuration(hero_entity_id, self.state.elevation_function)
+        self.gateway.send_create_actors(hero_entity_id, actors)
 
-        self.proxy.send_action(actions.ConfigurationAction(
-            HERO_ENTITY_ID,
-            self.state.elevation_function,
-        ))
-        self.proxy.send_action(actions.CreateActorsAction(actors))
+        return hero_entity_id
 
     def _handle_job(self, handle: executor.JobHandle, job: essentials.Job) -> None:
         result = job.perform(self.state)
 
         for action in result.actions:
-            self.proxy.send_action(action)
+            self.gateway.broadcast_action(action)
 
         for event in result.events:
             self.scheduler.enter(None, 0.0, entity_id=event.get_receiver_id(), trigger=event)
@@ -79,10 +67,10 @@ class Engine(executor.Processor):
 
         if old_task is not new_task:
             for action in old_task.finish(self.state):
-                self.proxy.send_action(action)
+                self.gateway.broadcast_action(action)
 
             for action in new_task.start(self.state):
-                self.proxy.send_action(action)
+                self.gateway.broadcast_action(action)
 
             next_job = new_task.get_job()
             self.scheduler.cancel(handle=entity.get_id())
@@ -92,4 +80,11 @@ class Engine(executor.Processor):
                         delay=next_job.get_start_delay(),
                         trigger=next_job,
                     )
+
+    def _handle_entity(self, entity: essentials.Entity) -> None:
+        entity_id = entity.get_id()
+        if entity.features.performer is not None:
+            self.run(None, trigger=events.ResumeEvent(entity_id))
+        if entity.features.eater is not None:
+            self.run(None, trigger=jobs.HungerDrainJob(entity_id))
 

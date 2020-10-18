@@ -1,8 +1,12 @@
 import unittest
 
+from typing import Any, Dict
+
+from . import common
+
 from src import craft
 
-class CraftTest(unittest.TestCase):
+class CraftTest(common.SerdeTest):
     def test_ingredient_filter_items(self) -> None:
         """Checks if filtering works correctly. Filtered list should contain only items compatible
         with the given ingredient/material."""
@@ -103,4 +107,20 @@ class CraftTest(unittest.TestCase):
         self.assertTrue(assembly.update_item(0, craft.Item(1, craft.Essence.GOLD, 0), -1))
 
         self.assertEqual(assembly, expected)
+
+    def test_serde_assembly(self) -> None:
+        original: Dict[str, Any] = {
+            'recipe_codename': 'my_recipe',
+            'sources': [[{
+                'actor_id': 4,
+                'essence': 'GOLD',
+                'quantity': 6,
+            }, {
+                'actor_id': 7,
+                'essence': 'ROCKS',
+                'quantity': 5,
+            }]]
+        }
+
+        self.assert_serde(original, craft.Assembly.Schema(), craft.Assembly)
 

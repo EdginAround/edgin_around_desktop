@@ -1,14 +1,26 @@
+import marshmallow
+from marshmallow import fields as mf
+
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from . import defs, geometry
 
 
 class Actor:
+    class Schema(marshmallow.Schema):
+        id = mf.Integer()
+        position = mf.Nested(geometry.Point.Schema)
+        entity_name = mf.String()
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            return Actor(**data)
+
     def __init__(
             self,
             id: defs.ActorId,
-            position: Optional[geometry.Point],
             entity_name: str,
+            position: Optional[geometry.Point] = None,
         ) -> None:
         self.id = id
         self.position = position
@@ -55,7 +67,7 @@ class Scene:
         if actor_id in self.actors:
             return self.actors[actor_id]
         else:
-            return Actor(-1, geometry.Point(0.0, 0.0), '')
+            return Actor(-1, '', geometry.Point(0.0, 0.0))
 
     def get_actors(self) -> Iterable[Actor]:
         return self.actors.values()

@@ -26,16 +26,16 @@ class Controls:
         self.current_action: Optional[Callable[[], None]] = None
 
         self.persistent_actions: PlainCallbackDict = {
-                (key.A, NOMODS): lambda: proxy.send_move(world.get_bearing() - 0.5 * pi),
-                (key.D, NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.5 * pi),
-                (key.S, NOMODS): lambda: proxy.send_move(world.get_bearing() + 1.0 * pi),
-                (key.W, NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.0 * pi),
-                (key.Z, NOMODS): lambda: proxy.send_hand(defs.Hand.LEFT, None),
-                (key.X, NOMODS): lambda: proxy.send_hand(defs.Hand.RIGHT, None),
-                (key.LEFT,  NOMODS): lambda: proxy.send_move(world.get_bearing() - 0.5 * pi),
-                (key.RIGHT, NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.5 * pi),
-                (key.DOWN,  NOMODS): lambda: proxy.send_move(world.get_bearing() + 1.0 * pi),
-                (key.UP,    NOMODS): lambda: proxy.send_move(world.get_bearing() + 0.0 * pi),
+                (key.A, NOMODS): lambda: proxy.send_motion(world.get_bearing() - 0.5 * pi),
+                (key.D, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.5 * pi),
+                (key.S, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 1.0 * pi),
+                (key.W, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.0 * pi),
+                (key.Z, NOMODS): lambda: proxy.send_hand_activation(defs.Hand.LEFT, None),
+                (key.X, NOMODS): lambda: proxy.send_hand_activation(defs.Hand.RIGHT, None),
+                (key.LEFT,  NOMODS): lambda: proxy.send_motion(world.get_bearing() - 0.5 * pi),
+                (key.RIGHT, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.5 * pi),
+                (key.DOWN,  NOMODS): lambda: proxy.send_motion(world.get_bearing() + 1.0 * pi),
+                (key.UP,    NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.0 * pi),
             }
 
         self.single_actions: PlainCallbackDict = {

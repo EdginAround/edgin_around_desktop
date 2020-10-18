@@ -34,7 +34,7 @@ class Animator:
 
         self.prev_tick = now
 
-    def add(self, animation) -> None:
+    def add(self, animation: animations.Animation) -> None:
         actor_id = animation.get_actor_id()
         if actor_id is not None:
             self.actor_animations[actor_id] = animation

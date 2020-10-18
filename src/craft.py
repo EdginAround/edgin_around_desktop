@@ -2,6 +2,10 @@
 
 from enum import unique, auto, Enum
 
+import marshmallow
+from marshmallow import fields as mf
+from marshmallow_enum import EnumField
+
 from typing import Dict, Iterable, List, Optional, Set
 
 from . import defs
@@ -127,6 +131,15 @@ _MATCHES = {
 class Item:
     """Represents an item that can be used as an ingredient in a recipe."""
 
+    class Schema(marshmallow.Schema):
+        actor_id = mf.Integer()
+        essence = EnumField(Essence)
+        quantity = mf.Integer()
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            return Item(**data)
+
     def __init__(self, actor_id: defs.ActorId, essence: Essence, quantity: int) -> None:
         self.actor_id = actor_id
         self.essence = essence
@@ -181,6 +194,14 @@ class Ingredient:
 
 class Assembly:
     """Represents a set of items that may be used in the corresponding recipe."""
+
+    class Schema(marshmallow.Schema):
+        recipe_codename = mf.Str()
+        sources = mf.List(mf.List(mf.Nested(Item.Schema)))
+
+        @marshmallow.post_load
+        def make(self, data, **kwargs):
+            return Assembly(**data)
 
     def __init__(self, recipe_codename: str, sources: List[List[Item]]) -> None:
         self.recipe_codename = recipe_codename

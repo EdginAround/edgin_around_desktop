@@ -4,7 +4,7 @@ import time
 from math import pi
 
 from abc import abstractmethod
-from typing import List, Optional, Union, Tuple, TYPE_CHECKING
+from typing import List, Optional, Union, Sequence, Tuple, TYPE_CHECKING
 
 from . import actions, craft, defs, events, features, geometry, inventory, scene
 if TYPE_CHECKING: from . import state
@@ -68,10 +68,10 @@ class Task:
             self.job.conclude()
 
     @abstractmethod
-    def start(self, state: 'state.State') -> List[actions.Action]: pass
+    def start(self, state: 'state.State') -> Sequence[actions.Action]: pass
 
     @abstractmethod
-    def finish(self, state: 'state.State') -> List[actions.Action]: pass
+    def finish(self, state: 'state.State') -> Sequence[actions.Action]: pass
 
     @abstractmethod
     def get_job(self) -> Optional[Job]: pass
@@ -81,10 +81,10 @@ class IdleTask(Task):
     def __init__(self) -> None:
         super().__init__()
 
-    def start(self, state: 'state.State') -> List[actions.Action]:
+    def start(self, state: 'state.State') -> Sequence[actions.Action]:
         return list()
 
-    def finish(self, state: 'state.State') -> List[actions.Action]:
+    def finish(self, state: 'state.State') -> Sequence[actions.Action]:
         return list()
 
     def get_job(self) -> Optional[Job]:
@@ -124,7 +124,7 @@ class Entity:
         return self.position
 
     def as_actor(self) -> scene.Actor:
-        return scene.Actor(self.get_id(), self.get_position(), self.get_name())
+        return scene.Actor(self.get_id(), self.get_name(), self.get_position())
 
     def as_craft_item(self) -> craft.Item:
         quantity = self.features.stackable.get_size() if self.features.stackable is not None else 1

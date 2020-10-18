@@ -28,7 +28,7 @@ class HeroTest(common.EntityTest):
         self.world.add_entity(hero)
         id = hero.get_id()
 
-        old, new = self.handle_event(hero, events.StartMovingEvent(id, bearing))
+        old, new = self.handle_event(hero, events.StartMotionEvent(id, bearing))
         self.assertIsNot(old, new)
 
         expected_initial = [actions.MovementAction(id, speed, bearing, max_duration)]

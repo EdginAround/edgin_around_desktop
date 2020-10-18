@@ -12,26 +12,14 @@ class WorldGenerator:
         return state.State(elevation_function, entities)
 
     def generate(self, radius) -> state.State:
-        # Elevation
-        def hills(pos: geometry.Point) -> float:
-            return 0.003 * radius \
-                * (pos.theta / math.pi - 1) * math.sin(50 * pos.phi) \
-                * (pos.theta / math.pi - 2) * math.sin(50 * pos.theta)
-
-        def ranges(pos: geometry.Point) -> float:
-            return 0.006 * radius * math.cos(10 * pos.theta + math.pi) * math.cos(10 * pos.phi)
-
-        def continents(pos: geometry.Point) -> float:
-            return 0.009 * radius * math.sin(pos.theta) * math.sin(pos.phi)
-
+        origin = geometry.Point(0.0, 0.0)
         elevation_function = geometry.ElevationFunction(radius)
-        elevation_function.add(hills)
-        elevation_function.add(ranges)
-        elevation_function.add(continents)
+        elevation_function.add(geometry.Hills(origin))
+        elevation_function.add(geometry.Ranges(origin))
+        elevation_function.add(geometry.Continents(origin))
 
         # Entities
         entity_list: List[essentials.Entity] = [
-            entities.Pirate(0, (0.500 * math.pi, 0.000 * math.pi)),
             entities.Axe(1, (0.501 * math.pi, -0.001 * math.pi)),
             entities.Warrior(2, (0.499 * math.pi, 0.001 * math.pi)),
             entities.Warrior(3, (0.498 * math.pi, 0.002 * math.pi)),

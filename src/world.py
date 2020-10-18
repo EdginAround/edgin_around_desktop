@@ -246,12 +246,16 @@ class World:
         GL.glUseProgram(0)
 
     def _load_data(self) -> None:
+        def rescale(point: geometry.Point):
+            assert self._scene.elevation_function is not None
+            return self._scene.elevation_function.evaluate_with_radius(point)
+
         self._radius = self._scene.get_radius()
         self._elevation = self._scene.get_elevation(geometry.Point(self._theta, self._phi))
 
         figure = geometry.Structures.sphere(5, self._radius)
         self._renderer_water = graphics.SolidPolyhedronRenderer(figure, self._media.tex.water)
-        figure.rescale(self._scene.elevation_function)
+        figure.rescale(rescale)
         self._renderer_ground = graphics.SolidPolyhedronRenderer(figure, self._media.tex.grass)
 
     def _refresh_view(self) -> None:

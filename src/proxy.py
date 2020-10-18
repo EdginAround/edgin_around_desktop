@@ -1,74 +1,69 @@
+import json, socket
+
 from typing import Optional
 
-from . import actions, animations, animator, craft, defs, engine, events
+from . import craft, defs, moves
 
 
 class Proxy:
-    CLIENT_ID = 0
+    """Provides an interface to send messages to the server."""
 
     def __init__(self) -> None:
-        self.engine: Optional[engine.Engine] = None
-        self.animator: Optional[animator.Animator] = None
+        self._sock: Optional[socket.socket] = None
+        self._schema = moves.MoveSchema()
 
-    def send_action(self, action: actions.Action) -> None:
-        if self.animator is not None:
-            animation = animations.animation_from_action(action)
-            if animation is not None:
-                self.animator.add(animation)
+    def set_socket(self, sock: socket.socket) -> None:
+        """Set the socket to be used."""
 
-    def set_ends(self, engine, animator) -> None:
-        self.engine = engine
-        self.animator = animator
-
-        assert self.engine is not None
-        self.engine.handle_connection(self.CLIENT_ID)
+        self._sock = sock
 
     def send_stop(self) -> None:
-        assert self.engine is not None
-        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
-            self._send_event(events.StopEvent(receiver_id))
+        """Send `stop` move."""
+
+        self._send_move(moves.StopMove())
 
     def send_conclude(self) -> None:
-        assert self.engine is not None
-        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
-            self._send_event(events.ConcludeEvent(receiver_id))
+        """Send `conclude` move."""
 
-    def send_move(self, bearing) -> None:
-        assert self.engine is not None
-        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
-            self._send_event(events.StartMovingEvent(receiver_id, bearing))
+        self._send_move(moves.ConcludeMove())
 
-    def send_hand(self, hand: defs.Hand, item_id: Optional[defs.ActorId]) -> None:
-        assert self.engine is not None
-        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
-            self._send_event(events.HandActivationEvent(receiver_id, hand, item_id))
+    def send_motion(self, bearing) -> None:
+        """Send `motion` move."""
+
+        self._send_move(moves.StartMotionMove(bearing))
+
+    def send_hand_activation(self, hand: defs.Hand, item_id: Optional[defs.ActorId]) -> None:
+        """Send `hand_activation` move."""
+
+        self._send_move(moves.HandActivationMove(hand, item_id))
 
     def send_inventory_swap(self, hand: defs.Hand, inventory_index: int) -> None:
-        assert self.engine is not None
-        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
-            self._send_event(events.InventoryUpdateEvent(
-                receiver_id,
-                hand,
-                inventory_index,
-                defs.UpdateVariant.SWAP,
-            ))
+        """Send `swap` variant of `inventory_update` move."""
+
+        self._send_move(moves.InventoryUpdateMove(
+            hand,
+            inventory_index,
+            defs.UpdateVariant.SWAP,
+        ))
 
     def send_inventory_merge(self, hand: defs.Hand, inventory_index: int) -> None:
-        assert self.engine is not None
-        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
-            self._send_event(events.InventoryUpdateEvent(
-                receiver_id,
-                hand,
-                inventory_index,
-                defs.UpdateVariant.MERGE,
-            ))
+        """Send `merge` variant of `inventory_update` move."""
+
+        self._send_move(moves.InventoryUpdateMove(
+            hand,
+            inventory_index,
+            defs.UpdateVariant.MERGE,
+        ))
 
     def send_craft(self, assembly: craft.Assembly) -> None:
-        assert self.engine is not None
-        if (receiver_id := self.engine.get_hero_id_for_client(self.CLIENT_ID)) is not None:
-            self._send_event(events.CraftEvent(receiver_id, assembly))
+        """Send `craft` move."""
 
-    def _send_event(self, event: events.Event) -> None:
-        assert self.engine is not None
-        self.engine.handle_event(event)
+        self._send_move(moves.CraftMove(assembly))
+
+    def _send_move(self, move: moves.Move) -> None:
+        """Send the given move to the server."""
+
+        if self._sock is not None:
+            string = json.dumps(self._schema.dump(move)) + '\n'
+            self._sock.sendall(string.encode())
 

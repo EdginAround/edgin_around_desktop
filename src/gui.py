@@ -45,10 +45,10 @@ class WorldFormation(formations.Formation):
         button, modifiers = args
         if button == pyglet.window.mouse.LEFT:
             if id := self._world.get_highlight_actor_id():
-                self._proxy.send_hand(defs.Hand.LEFT, id)
+                self._proxy.send_hand_activation(defs.Hand.LEFT, id)
         elif button == pyglet.window.mouse.RIGHT:
             if id := self._world.get_highlight_actor_id():
-                self._proxy.send_hand(defs.Hand.RIGHT, id)
+                self._proxy.send_hand_activation(defs.Hand.RIGHT, id)
         return formations.EventResult.HANDLED
 
     def on_release(self, position: formations.Position, *args) -> formations.EventResult:
@@ -189,7 +189,7 @@ class InventoryFormation(formations.Stripe):
             img, quantity_label = self.EMPTY_SLOT, ''
             if entry is not None:
                 img, quantity_label = \
-                    entry.codename, f'{entry.current_quantity}/{entry.max_quantity}'
+                    entry.codename, f'{entry.current_quantity}/{entry.get_max_quantity()}'
             self.pockets.get_pocket(i).set_image_and_volume(tex[img], quantity_label)
 
         self.pockets.mark_as_needs_reallocation()

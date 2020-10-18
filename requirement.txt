@@ -1,4 +1,7 @@
 pyglet
 PyOpenGl
+marshmallow
+marshmallow-enum
+marshmallow-oneofschema
 numpy
 tinyarray

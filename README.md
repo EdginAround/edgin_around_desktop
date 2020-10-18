@@ -1,7 +1,7 @@
 # Edgin' Around
 
-*"Edgin' Around'* is a survival game. It draws inspiration from the genre but also beyond from games
-like:
+*"Edgin' Around"* is a survival game. It draws inspiration from the genre, but also beyond, from
+games like:
 
  - Don't Starve
  - Civilisation
@@ -53,7 +53,17 @@ unzip edgin_around_resources.zip
 
 ### 5. Run the game
 
-If everything went right you can run the game with the following command:
+If everything went right, you can run the game. The game consists of two programs:
+ - client (frontend) providing the graphical interface of the game
+ - server (backend) processing messages from many connected clients and running the main logic of
+   the game
+
+Run the server with the following command:
+```sh
+python edgin_around_server.py
+```
+
+and then the client with the following command:
 ```sh
 python edgin_around.py
 ```

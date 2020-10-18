@@ -1,11 +1,12 @@
-from typing import List, Optional
+import abc
+from dataclasses import dataclass
 
-from . import craft, defs
+from typing import Any, Dict, List, Optional
+
+from . import craft, defs, moves
 
 
-class Event(defs.Debugable):
-    DEBUG_FIELDS: List[str] = []
-
+class Event(abc.ABC):
     def __init__(self, receiver_id) -> None:
         self._receiver_id = receiver_id
 
@@ -27,18 +28,30 @@ class StopEvent(Event):
     def __init__(self, receiver_id: defs.ActorId) -> None:
         super().__init__(receiver_id)
 
+    @staticmethod
+    def from_move(receiver_id: defs.ActorId, move: moves.StopMove) -> 'StopEvent':
+        return StopEvent(receiver_id)
+
 
 class ConcludeEvent(Event):
     def __init__(self, receiver_id: defs.ActorId) -> None:
         super().__init__(receiver_id)
 
+    @staticmethod
+    def from_move(receiver_id: defs.ActorId, move: moves.ConcludeMove) -> 'ConcludeEvent':
+        return ConcludeEvent(receiver_id)
 
-class StartMovingEvent(Event):
+
+class StartMotionEvent(Event):
     DEBUG_FIELDS = ['bearing']
 
-    def __init__(self, receiver_id: defs.ActorId, bearing) -> None:
+    def __init__(self, receiver_id: defs.ActorId, bearing: float) -> None:
         super().__init__(receiver_id)
         self.bearing = bearing
+
+    @staticmethod
+    def from_move(receiver_id: defs.ActorId, move: moves.StartMotionMove) -> 'StartMotionEvent':
+        return StartMotionEvent(receiver_id, move.bearing)
 
 
 class HandActivationEvent(Event):
@@ -53,6 +66,13 @@ class HandActivationEvent(Event):
         super().__init__(receiver_id)
         self.hand = hand
         self.object_id = object_id
+
+    @staticmethod
+    def from_move(
+            receiver_id: defs.ActorId,
+            move: moves.HandActivationMove,
+        ) -> 'HandActivationEvent':
+        return HandActivationEvent(receiver_id, move.hand, move.object_id)
 
 
 class InventoryUpdateEvent(Event):
@@ -69,6 +89,18 @@ class InventoryUpdateEvent(Event):
         self.hand = hand
         self.inventory_index = inventory_index
         self.update_variant = update_variant
+
+    @staticmethod
+    def from_move(
+            receiver_id: defs.ActorId,
+            move: moves.InventoryUpdateMove,
+        ) -> 'InventoryUpdateEvent':
+        return InventoryUpdateEvent(
+            receiver_id,
+            move.hand,
+            move.inventory_index,
+            move.update_variant,
+        )
 
 
 class DamageEvent(Event):
@@ -98,4 +130,24 @@ class CraftEvent(Event):
         ) -> None:
         super().__init__(receiver_id)
         self.assembly = assembly
+
+    @staticmethod
+    def from_move(receiver_id: defs.ActorId, move: moves.CraftMove) -> 'CraftEvent':
+        return CraftEvent(receiver_id, move.assembly)
+
+
+_EVENT_CONSTRUCTORS: Dict[type, Any] = {
+        moves.StopMove: StopEvent.from_move,
+        moves.ConcludeMove: ConcludeEvent.from_move,
+        moves.StartMotionMove: StartMotionEvent.from_move,
+        moves.HandActivationMove: HandActivationEvent.from_move,
+        moves.InventoryUpdateMove: InventoryUpdateEvent.from_move,
+        moves.CraftMove: CraftEvent.from_move,
+    }
+
+
+def event_from_move(move: moves.Move, receiver_id: defs.ActorId) -> Optional[Event]:
+    """Converts a `Move` into an `Event`."""
+
+    return _EVENT_CONSTRUCTORS[type(move)](receiver_id, move)
 

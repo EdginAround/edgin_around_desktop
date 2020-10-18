@@ -1,10 +1,14 @@
 import unittest
 
-from typing import Iterable, List, Optional, Sequence, Tuple
+import marshmallow
+
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from src import actions, essentials, events, generator, jobs
 
 class EntityTest(unittest.TestCase):
+    """Provides common functionality to all entity tests."""
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.world = generator.WorldGenerator().generate_basic(100.0)
@@ -14,17 +18,23 @@ class EntityTest(unittest.TestCase):
             entity: essentials.Entity,
             event: events.Event,
             ) -> Tuple[essentials.Task, essentials.Task]:
+        """Applies the given event to the given entity and returns old and new task."""
+
         old_task = entity.get_task()
         entity.handle_event(event)
         new_task = entity.get_task()
         return old_task, new_task
 
     def assert_events(self, received: List[events.Event], expected: List[events.Event]) -> None:
+        """Asserts that the two passed lists of events are equal."""
+
         self.assertEqual(len(received), len(expected))
         for rec, exp in zip(received, expected):
             self.assert_event(rec, exp)
 
     def assert_event(self, received: events.Event, expected: events.Event) -> None:
+        """Asserts that the two passed events are equal."""
+
         self.assertEqual(type(received), type(expected))
         if isinstance(received, events.FinishedEvent):
             pass
@@ -32,11 +42,15 @@ class EntityTest(unittest.TestCase):
             raise Exception(f'Event {type(received).__name__} is not supported by tests yet!')
 
     def assert_actions(self, received: Sequence[actions.Action], expected: Sequence[actions.Action]):
+        """Asserts that the two passed lists of actions are equal."""
+
         self.assertEqual(len(received), len(expected))
         for rec, exp in zip(received, expected):
             self.assert_action(rec, exp)
 
     def assert_action(self, received: actions.Action, expected: actions.Action) -> None:
+        """Asserts that the two passed lists of actions are equal."""
+
         self.assertEqual(type(received), type(expected))
         if isinstance(received, actions.ConfigurationAction):
             assert isinstance(expected, type(received)) # for mypy
@@ -58,6 +72,8 @@ class EntityTest(unittest.TestCase):
             received: actions.ConfigurationAction,
             expected: actions.ConfigurationAction,
             ) -> None:
+        """Asserts that the two passed `configuration` actions are equal."""
+
         self.assertEqual(received.hero_actor_id, expected.hero_actor_id)
 
     def assert_localize_action(
@@ -65,6 +81,8 @@ class EntityTest(unittest.TestCase):
             received: actions.LocalizeAction,
             expected: actions.LocalizeAction,
             ) -> None:
+        """Asserts that the two passed `localize` actions are equal."""
+
         # Position is ignored.
         self.assertEqual(received.actor_id, expected.actor_id)
 
@@ -73,6 +91,8 @@ class EntityTest(unittest.TestCase):
             received: actions.MovementAction,
             expected: actions.MovementAction,
             ) -> None:
+        """Asserts that the two passed `movement` actions are equal."""
+
         # Bearing is generated randomly. No need to check it.
         self.assertEqual(received.actor_id, expected.actor_id)
         self.assertEqual(received.speed, expected.speed)
@@ -83,6 +103,8 @@ class EntityTest(unittest.TestCase):
             received: actions.PickStartAction,
             expected: actions.PickStartAction,
             ) -> None:
+        """Asserts that the two passed `pick_start` actions are equal."""
+
         self.assertEqual(received.who, expected.who)
         self.assertEqual(received.what, expected.what)
 
@@ -91,6 +113,8 @@ class EntityTest(unittest.TestCase):
             received: Optional[essentials.Job],
             expected: Optional[essentials.Job],
             ) -> None:
+        """Asserts that the two passed jobs are equal."""
+
         self.assertEqual(type(received), type(expected))
         if received is None or expected is None:
             return
@@ -107,11 +131,38 @@ class EntityTest(unittest.TestCase):
             raise Exception(f'Job {type(received).__name__} is not supported by tests yet!')
 
     def assert_wait_job(self, received: jobs.WaitJob, expected: jobs.WaitJob) -> None:
+        """Asserts that the two passed `wait` jobs are equal."""
+
         self.assertEqual(expected.duration, received.duration)
 
     def assert_movement_job(self, received: jobs.MovementJob, expected: jobs.MovementJob) -> None:
+        """Asserts that the two passed `movement` jobs are equal."""
+
         # Bearing is generated randomly. No need to check it.
         self.assertEqual(received.entity_id, expected.entity_id)
         self.assertEqual(received.speed, expected.speed)
         self.assertEqual(received.duration, expected.duration)
+
+
+class SerdeTest(unittest.TestCase):
+    """Provides common functionality to all serialisation-deserialisation tests."""
+
+    def assert_serde(
+            self,
+            dictionary: Dict[str, Any],
+            schema: marshmallow.Schema,
+            typ: type,
+        ) -> None:
+        """
+        Checks if the given dictionary when deserialized with the given schema has the passed type
+        and when serialised again is equal to the original dictionary.
+        """
+
+        object = schema.load(dictionary)
+        self.assertEqual(type(object), typ)
+        parsed = schema.dump(object)
+        if hasattr(object, 'to_string'):
+            self.assertFalse('\n' in object.to_string())
+        self.assertDictEqual(dictionary, parsed)
+
 

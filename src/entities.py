@@ -151,7 +151,7 @@ class Pirate(essentials.Entity):
         elif isinstance(event, events.StopEvent) or isinstance(event, events.FinishedEvent):
             self.task = essentials.IdleTask()
 
-        elif isinstance(event, events.StartMovingEvent):
+        elif isinstance(event, events.StartMotionEvent):
             self.task = tasks.MovementTask(self.get_id(), speed=1.0, bearing=event.bearing)
 
         elif isinstance(event, events.HandActivationEvent):
