@@ -458,7 +458,7 @@ class Hills(_TerrainInfo):
             return Hills(**data)
 
     def evaluate(self, pos: Point, radius: float) -> float:
-        return 0.003 * radius \
+        return 0.006 * radius \
             * (pos.theta / pi - 1) * sin(50 * pos.phi) \
             * (pos.theta / pi - 2) * sin(50 * pos.theta)
 
@@ -475,7 +475,7 @@ class Ranges(_TerrainInfo):
             return Ranges(**data)
 
     def evaluate(self, pos: Point, radius: float) -> float:
-        return 0.006 * radius * cos(10 * pos.theta + pi) * cos(10 * pos.phi)
+        return 0.012 * radius * cos(10 * pos.theta + pi) * cos(10 * pos.phi)
 
 
 @dataclass
@@ -490,7 +490,7 @@ class Continents(_TerrainInfo):
             return Continents(**data)
 
     def evaluate(self, pos: Point, radius: float) -> float:
-        return 0.009 * radius * sin(pos.theta) * sin(pos.phi)
+        return 0.018 * radius * sin(pos.theta) * sin(pos.phi)
 
 
 class _TerrainSchema(OneOfSchema):

@@ -9,10 +9,12 @@ layout(location = 1) in vec2 inTexCoords;
 
 flat out highp int shHighlight;
 out highp vec2 shTexCoords;
+out highp float shDistance;
 
 void main(void) {
     gl_Position = uniView * uniModel * vec4(inPosition, 1);
     shHighlight = uniHighlight;
     shTexCoords = inTexCoords;
+    shDistance = length(gl_Position.xyz);
 }
 

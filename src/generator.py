@@ -1,4 +1,4 @@
-import math
+import math, random
 
 from typing import List
 
@@ -26,8 +26,12 @@ class WorldGenerator:
             entities.Rocks(4, (0.497 * math.pi, 0.003 * math.pi)),
             entities.Rocks(5, (0.495 * math.pi, 0.005 * math.pi)),
             entities.Gold(6, (0.496 * math.pi, 0.004 * math.pi)),
-            entities.Spruce(7, (0.493 * math.pi, -0.003 * math.pi)),
         ]
+
+        for i in range(7, 100):
+            phi = random.uniform(0.45 * math.pi, 0.55 * math.pi)
+            theta = random.uniform(-0.05 * math.pi, 0.05 * math.pi)
+            entity_list.append(entities.Spruce(i, (phi, theta)))
 
         return state.State(elevation_function, entity_list)
 

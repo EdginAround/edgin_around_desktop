@@ -10,9 +10,9 @@ sources:
   - id: "spruce"
     name: "spruce"
     size_x: 200
-    size_y: 200
+    size_y: 261
     pivot_x: 100
-    pivot_y: 197
+    pivot_y: 250
 
 skeletons:
 
