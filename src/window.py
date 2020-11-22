@@ -1,17 +1,17 @@
 import pyglet
 
-from . import animator, controls, defs, gui, world
+from . import animator, controls, gui
 
 
 class Window(pyglet.window.Window):
     TITLE = "Edgin' Around"
 
     def __init__(
-            self,
-            gui: gui.Gui,
-            controls: controls.Controls,
-            animator: animator.Animator,
-        ) -> None:
+        self,
+        gui: gui.Gui,
+        controls: controls.Controls,
+        animator: animator.Animator,
+    ) -> None:
         super().__init__(resizable=True)
         self.maximize()
 
@@ -50,4 +50,3 @@ class Window(pyglet.window.Window):
     def _schedule_redraw(self) -> None:
         noop = lambda *args, **kwargs: None
         pyglet.clock.schedule_once(noop, 0.0)
-

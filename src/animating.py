@@ -3,12 +3,13 @@ from dataclasses import dataclass
 from typing import Iterable, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from . import gui, media, scene, world
+    import edgin_around_rendering as ear
+    from . import gui, media
+
 
 @dataclass
 class AnimationContext:
-    scene: 'scene.Scene'
-    world: 'world.World'
-    gui: 'gui.Gui'
-    sounds: 'media.Sounds'
-
+    scene: "ear.Scene"
+    world: "ear.WorldExpositor"
+    gui: "gui.Gui"
+    sounds: "media.Sounds"

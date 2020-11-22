@@ -33,14 +33,14 @@ class Position:
         self.x = x
         self.y = y
 
-    def __add__(a: 'Position', b: 'Position') -> 'Position':
+    def __add__(a: "Position", b: "Position") -> "Position":
         return Position(a.x + b.x, a.y + b.y)
 
-    def __sub__(a: 'Position', b: 'Position') -> 'Position':
+    def __sub__(a: "Position", b: "Position") -> "Position":
         return Position(a.x - b.x, a.y - b.y)
 
     def __repr__(self) -> str:
-        return f'Position(x: {self.x}, y: {self.y})'
+        return f"Position(x: {self.x}, y: {self.y})"
 
 
 class Size:
@@ -49,7 +49,7 @@ class Size:
         self.height = max(height, 0.0)
 
     def __repr__(self) -> str:
-        return f'Size(width: {self.width}, height: {self.height})'
+        return f"Size(width: {self.width}, height: {self.height})"
 
 
 class Color:
@@ -66,18 +66,18 @@ class Color:
         return (self.r, self.g, self.b, self.a)
 
     def __repr__(self) -> str:
-        return f'Color({self.r}, {self.g}, {self.b}, {self.a})'
+        return f"Color({self.r}, {self.g}, {self.b}, {self.a})"
 
 
 class Plain:
     def __init__(
-            self,
-            texture_id: Optional[int],
-            color: Optional[Color],
-            position: Position,
-            size: Size,
-            flip_vertical: bool = False,
-        ) -> None:
+        self,
+        texture_id: Optional[int],
+        color: Optional[Color],
+        position: Position,
+        size: Size,
+        flip_vertical: bool = False,
+    ) -> None:
         self.texture_id = texture_id
         self.color = color
         self.position = position
@@ -85,24 +85,26 @@ class Plain:
         self.flip_vertical = flip_vertical
 
     def __repr__(self) -> str:
-        return 'Plain(texture_id: {}, color: {}, position: {}, size: {}, flip_vertical: {})' \
-        .format(self.texture_id, self.color, str(self.position), str(self.size), self.flip_vertical)
+        return "Plain(texture_id: {}, color: {}, position: {}, size: {}, flip_vertical: {})".format(
+            self.texture_id, self.color, str(self.position), str(self.size), self.flip_vertical
+        )
 
 
 class Content:
     def __init__(
-            self,
-            size: Size,
-            texture_id: Optional[int] = None,
-            color: Optional[Color] = None,
-        ) -> None:
+        self,
+        size: Size,
+        texture_id: Optional[int] = None,
+        color: Optional[Color] = None,
+    ) -> None:
         self._texture_id = texture_id
         self._color = color
         self._size = size
 
     def has_proper_size(self) -> bool:
-        return (not math.isclose(self._size.width, 0.0)) \
-           and (not math.isclose(self._size.height, 0.0))
+        return (not math.isclose(self._size.width, 0.0)) and (
+            not math.isclose(self._size.height, 0.0)
+        )
 
     def has_proper_content(self) -> bool:
         return (self._color is not None) or (self._texture_id is not None)
@@ -123,8 +125,9 @@ class Content:
         self._size = size
 
     def __repr__(self) -> str:
-        return 'Content(size: {}, texture: {}, color: {})' \
-            .format(self._size, self._texture_id, self._color)
+        return "Content(size: {}, texture: {}, color: {})".format(
+            self._size, self._texture_id, self._color
+        )
 
 
 class Formation:
@@ -188,12 +191,14 @@ class Formation:
         self._needs_reallocation = True
 
     def needs_update(self) -> bool:
-        return self._is_visible and \
-            (self._needs_update or any(c.needs_update() for c in self._children))
+        return self._is_visible and (
+            self._needs_update or any(c.needs_update() for c in self._children)
+        )
 
     def needs_reallocation(self) -> bool:
-        return self._is_visible and \
-            (self._needs_reallocation or any(c.needs_reallocation() for c in self._children))
+        return self._is_visible and (
+            self._needs_reallocation or any(c.needs_reallocation() for c in self._children)
+        )
 
     def on_grab(self, position: Position, *args) -> EventResult:
         if self.contains(position):
@@ -240,13 +245,15 @@ class Formation:
 
         if self._is_visible:
             if (self._content is not None) and (self._content.is_displayable()):
-                result.append(Plain(
+                result.append(
+                    Plain(
                         self._content._texture_id,
                         self._content._color,
                         abs_position,
                         self._size,
                         self._flip_vertical,
-                    ))
+                    )
+                )
 
             for child in self._children:
                 result.extend(child.prepare_plains(abs_position))
@@ -324,7 +331,7 @@ class Stripe(Formation):
             return max(child.calc_pref_width(height) for child in self._children)
 
         else:
-            raise Exception('Wrong orentation')
+            raise Exception("Wrong orentation")
 
     def calc_pref_height(self, width: float) -> float:
         if self._orientation == Orientation.HORIZONTAL:
@@ -334,7 +341,7 @@ class Stripe(Formation):
             return sum(child.calc_pref_height(width) for child in self._children)
 
         else:
-            raise Exception('Wrong orientation')
+            raise Exception("Wrong orientation")
 
 
 class Lineup(Formation):
@@ -343,7 +350,7 @@ class Lineup(Formation):
             self.weight = float(weight)
 
         def __repr__(self) -> str:
-            return f'Pack({self.weight})'
+            return f"Pack({self.weight})"
 
     def __init__(self, orientation: Orientation) -> None:
         super().__init__()
@@ -445,7 +452,7 @@ class Lineup(Formation):
             return max(child.calc_pref_width(height) for child in self._children)
 
         else:
-            raise Exception('Wrong orientation')
+            raise Exception("Wrong orientation")
 
     def calc_pref_height(self, width: float) -> float:
         if self._orientation == Orientation.HORIZONTAL:
@@ -455,7 +462,7 @@ class Lineup(Formation):
             return sum(child.calc_pref_height(width) for child in self._children)
 
         else:
-            raise Exception('Wrong orientation')
+            raise Exception("Wrong orientation")
 
 
 class Grid(Formation):
@@ -524,13 +531,13 @@ class Stack(Formation):
 class Clasp(Formation):
     class Constraint:
         def __init__(
-                self,
-                orientation: Orientation,
-                stretch: float,
-                expanse: Expanse,
-                horizontal_gravity: Gravity,
-                vertical_gravity: Gravity,
-                ) -> None:
+            self,
+            orientation: Orientation,
+            stretch: float,
+            expanse: Expanse,
+            horizontal_gravity: Gravity,
+            vertical_gravity: Gravity,
+        ) -> None:
             self.orientation = orientation
             self.stretch = stretch
             self.expanse = expanse
@@ -577,7 +584,7 @@ class Clasp(Formation):
             return container_size - content_size
 
         else:
-            raise Exception('Wrong gravity')
+            raise Exception("Wrong gravity")
 
     def _calc_size_for_horizontal(self, child: Formation, constraint: Constraint) -> Size:
         height = min(1.0, constraint.stretch) * self._size.height
@@ -657,7 +664,7 @@ class Scroll(Formation):
         elif self._gravity == Gravity.END:
             return container_size - content_size + offset
         else:
-            raise Exception('Unknown gravity')
+            raise Exception("Unknown gravity")
 
     def calc_pref_width(self, height: float) -> float:
         return self._inner.calc_pref_width(height)
@@ -667,4 +674,3 @@ class Scroll(Formation):
 
     def on_grab(self, position: Position, *args) -> EventResult:
         return super().on_grab(position, *args)
-

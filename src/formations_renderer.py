@@ -6,7 +6,7 @@ from OpenGL.GL import shaders
 
 from typing import Final, List, Optional, Tuple
 
-from . import formations, geometry
+from . import geometry, formations
 
 
 class PlainRenderer:
@@ -53,11 +53,11 @@ class PlainRenderer:
                 GL.glBindTexture(GL.GL_TEXTURE_2D, plain.texture_id)
 
             GL.glDrawElements(
-                    GL.GL_TRIANGLES,
-                    count,
-                    GL.GL_UNSIGNED_INT,
-                    ctypes.c_void_p(4 * count * i),
-                )
+                GL.GL_TRIANGLES,
+                count,
+                GL.GL_UNSIGNED_INT,
+                ctypes.c_void_p(4 * count * i),
+            )
 
         GL.glDisableVertexAttribArray(2)
         GL.glDisableVertexAttribArray(1)
@@ -83,7 +83,7 @@ class PlainRenderer:
         indices = self._prepare_indices()
         GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, 4 * len(indices), indices, GL.GL_STATIC_DRAW)
 
-    def _prepare_vertices(self) -> numpy.array:
+    def _prepare_vertices(self) -> numpy.ndarray:
         DEFAULT_COLOR = (0.0, 0.0, 0.0, 0.0)
 
         data = []
@@ -98,19 +98,23 @@ class PlainRenderer:
             else:
                 t11, t12, t21, t22, t31, t32, t41, t42 = 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0
 
+            # fmt: off
             data.append([
                     x1, y1, z, r, g, b, a, t11, t12,
                     x1, y2, z, r, g, b, a, t21, t22,
                     x2, y2, z, r, g, b, a, t31, t32,
                     x2, y1, z, r, g, b, a, t41, t42,
                 ])
+            # fmt: on
+
         return numpy.array(data, dtype=numpy.float32).flatten()
 
-    def _prepare_indices(self) -> numpy.array:
+    def _prepare_indices(self) -> numpy.ndarray:
         num_layers = len(self._plains)
-        return numpy.array([
-                4 * num + offset for num in range(num_layers) for offset in (0, 1, 2, 2, 3, 0)
-            ], dtype=numpy.uint32)
+        return numpy.array(
+            [4 * num + offset for num in range(num_layers) for offset in (0, 1, 2, 2, 3, 0)],
+            dtype=numpy.uint32,
+        )
 
 
 class FormationGroup:
@@ -144,7 +148,7 @@ class FormationGroup:
     def _initialize(self) -> None:
         GL.glClearColor(0.5, 0.5, 0.5, 1)
 
-        self._program = self._load_program('formations')
+        self._program = self._load_program("formations")
         self._loc_view = GL.glGetUniformLocation(self._program, "uniView")
 
         self._renderer = PlainRenderer()
@@ -154,13 +158,13 @@ class FormationGroup:
         self._initialized = True
 
     def _load_program(self, id: str) -> int:
-        file_template = './shaders/{}_{}.glsl'
+        file_template = "./shaders/{}_{}.glsl"
 
-        vertex_shader_file = open(file_template.format(id, 'vertex'), 'r')
+        vertex_shader_file = open(file_template.format(id, "vertex"), "r")
         vertex_shader_source = vertex_shader_file.read()
         vertex_shader_file.close()
 
-        fragment_shader_file = open(file_template.format(id, 'fragment'), 'r')
+        fragment_shader_file = open(file_template.format(id, "fragment"), "r")
         fragment_shader_source = fragment_shader_file.read()
         fragment_shader_file.close()
 
@@ -183,9 +187,6 @@ class FormationGroup:
 
         GL.glViewport(0, 0, self._size.width, self._size.height)
 
-        GL.glClearColor(0.6, 0.6, 0.6, 1.0)
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-
     def _draw(self) -> None:
         assert self._renderer is not None
 
@@ -197,4 +198,3 @@ class FormationGroup:
     def _teardown(self) -> None:
         GL.glDisable(GL.GL_BLEND)
         GL.glDisable(GL.GL_TEXTURE_2D)
-

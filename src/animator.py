@@ -2,16 +2,20 @@ import time
 
 from typing import Dict, List
 
-from . import animating, animations, defs, gui, media, scene, world
+import edgin_around_rendering as ear
+from edgin_around_api import defs
+from . import animating, animations, gui, media
 
 
 class Animator:
-    def __init__(self, _scene: scene.Scene, _world: world.World, _gui: gui.Gui) -> None:
+    def __init__(
+        self, _scene: ear.Scene, _world: ear.WorldExpositor, _gui: gui.Gui, resource_dir: str
+    ) -> None:
         self.context = animating.AnimationContext(
             scene=_scene,
             world=_world,
             gui=_gui,
-            sounds=media.Sounds(),
+            sounds=media.Sounds(resource_dir),
         )
 
         self.general_animations: List[animations.Animation] = list()
@@ -52,4 +56,3 @@ class Animator:
             del self.actor_animations[actor_id]
 
         self.general_animations[:] = [a for a in self.general_animations if not a.expired()]
-

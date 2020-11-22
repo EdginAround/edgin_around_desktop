@@ -5,3 +5,4 @@ res/tiles/
 res/effects/**/*.mp3
 __pycache__/
 session.vim
+rust/target

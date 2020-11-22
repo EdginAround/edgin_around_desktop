@@ -2,7 +2,7 @@ import json, socket
 
 from typing import Optional
 
-from . import craft, defs, moves
+from edgin_around_api import craft, defs, moves
 
 
 class Proxy:
@@ -40,20 +40,24 @@ class Proxy:
     def send_inventory_swap(self, hand: defs.Hand, inventory_index: int) -> None:
         """Send `swap` variant of `inventory_update` move."""
 
-        self._send_move(moves.InventoryUpdateMove(
-            hand,
-            inventory_index,
-            defs.UpdateVariant.SWAP,
-        ))
+        self._send_move(
+            moves.InventoryUpdateMove(
+                hand,
+                inventory_index,
+                defs.UpdateVariant.SWAP,
+            )
+        )
 
     def send_inventory_merge(self, hand: defs.Hand, inventory_index: int) -> None:
         """Send `merge` variant of `inventory_update` move."""
 
-        self._send_move(moves.InventoryUpdateMove(
-            hand,
-            inventory_index,
-            defs.UpdateVariant.MERGE,
-        ))
+        self._send_move(
+            moves.InventoryUpdateMove(
+                hand,
+                inventory_index,
+                defs.UpdateVariant.MERGE,
+            )
+        )
 
     def send_craft(self, assembly: craft.Assembly) -> None:
         """Send `craft` move."""
@@ -64,6 +68,5 @@ class Proxy:
         """Send the given move to the server."""
 
         if self._sock is not None:
-            string = json.dumps(self._schema.dump(move)) + '\n'
+            string = json.dumps(self._schema.dump(move)) + "\n"
             self._sock.sendall(string.encode())
-

@@ -2,16 +2,18 @@ import abc, json, time
 
 from typing import Any, Dict, Iterable, List, Optional, TYPE_CHECKING
 
-from . import actions, animating, defs, geometry, inventory
+import edgin_around_rendering as ear
+from edgin_around_api import actions, defs, geometry, inventory
+from . import animating
 
 
 class AnimationName:
-    IDLE = 'idle'
-    WALK = 'walk'
-    PICK = 'pick'
-    DAMAGED = 'damaged'
-    SWING_LEFT = 'swing_left'
-    SWING_RIGHT = 'swing_right'
+    IDLE = "idle"
+    WALK = "walk"
+    PICK = "pick"
+    DAMAGED = "damaged"
+    SWING_LEFT = "swing_left"
+    SWING_RIGHT = "swing_right"
 
 
 class Animation(abc.ABC):
@@ -40,17 +42,22 @@ class Animation(abc.ABC):
 
     @abc.abstractmethod
     def tick(self, interval, context: animating.AnimationContext) -> None:
-        raise NotImplementedError('This animation is not implemented')
+        raise NotImplementedError("This animation is not implemented")
 
 
 class ConfigurationAnimation(Animation):
     def __init__(self, action: actions.ConfigurationAction) -> None:
         super().__init__(None)
         self.hero_actor_id = action.hero_actor_id
-        self.elevation_function = action.elevation_function
+        self.elevation = action.elevation
 
     def tick(self, interval, context: animating.AnimationContext) -> None:
-        context.scene.configure(self.hero_actor_id, self.elevation_function)
+        elevation = ear.ElevationFunction(self.elevation.radius)
+        for terrain in self.elevation.terrain:
+            origin = terrain.get_origin()
+            elevation.add_terrain(terrain.get_name(), origin.theta, origin.phi)
+
+        context.scene.configure(self.hero_actor_id, elevation)
         self.expire()
 
 
@@ -78,8 +85,18 @@ class CreateActorsAnimation(Animation):
         self.actors = action.actors
 
     def tick(self, interval, context: animating.AnimationContext) -> None:
-        context.scene.create_actors(self.actors)
-        context.world.create_renderers(self.actors)
+        actors = list()
+        for a in self.actors:
+            position: Optional[ear.Point]
+            if a.position is not None:
+                position = ear.Point(a.position.theta, a.position.phi)
+            else:
+                position = None
+
+            actors.append(ear.Actor(a.id, a.entity_name, position))
+
+        context.scene.create_actors(actors)
+        context.world.create_renderers(actors)
         self.expire()
 
 
@@ -107,10 +124,17 @@ class MovementAnimation(Animation):
 
     def tick(self, interval, context: animating.AnimationContext) -> None:
         distance = self.speed * interval
-        actor = context.scene.get_actor(self.actor_id)
-        actor.move_by(distance, self.bearing, context.scene.get_radius())
-        if self._tick_count == 0:
-            context.world.play_animation(self.actor_id, AnimationName.WALK)
+
+        old_position = context.scene.get_actor_position(self.actor_id)
+        old_point = geometry.Point(old_position.get_theta(), old_position.get_phi())
+        new_point = old_point.moved_by(distance, self.bearing, context.scene.get_radius())
+        new_position = ear.Point(new_point.theta, new_point.phi)
+        context.scene.set_actor_position(self.actor_id, new_position)
+
+        # TODO: Play animation
+        # if self._tick_count == 0:
+        #     context.world.play_animation(self.actor_id, AnimationName.WALK)
+
         self._tick_count += 1
 
 
@@ -124,10 +148,10 @@ class LocalizeAnimation(Animation):
         return self.actor_id
 
     def tick(self, interval, context: animating.AnimationContext) -> None:
-        actor = context.scene.get_actor(self.actor_id)
-        if actor is not None:
-            actor.set_position(self.position)
-        context.world.play_animation(self.actor_id, AnimationName.IDLE)
+        position = ear.Point(self.position.theta, self.position.phi)
+        context.scene.set_actor_position(self.actor_id, position)
+        # TODO: Play animation:
+        # context.world.play_animation(self.actor_id, AnimationName.IDLE)
         self.expire()
 
 
@@ -149,7 +173,8 @@ class PickStartAnimation(Animation):
         self.item_id = action.what
 
     def tick(self, interval, context: animating.AnimationContext) -> None:
-        context.world.play_animation(self.actor_id, AnimationName.PICK)
+        # TODO: Play animation:
+        # context.world.play_animation(self.actor_id, AnimationName.PICK)
         self.expire()
 
 
@@ -159,7 +184,8 @@ class PickEndAnimation(Animation):
         self.actor_id = action.who
 
     def tick(self, interval, context: animating.AnimationContext) -> None:
-        context.world.play_animation(self.actor_id, AnimationName.IDLE)
+        # TODO: Play animation:
+        # context.world.play_animation(self.actor_id, AnimationName.IDLE)
         self.expire()
 
 
@@ -175,10 +201,12 @@ class UpdateInventoryAnimation(Animation):
         context.scene.hide_actors(self.inventory.get_all_ids())
 
         left_item = self.inventory.get_hand(defs.Hand.LEFT)
-        context.world.attach_skeleton(self.owner_id, left_item, defs.Attachement.LEFT_ITEM)
+        # TODO: attach skeleton:
+        # context.world.attach_skeleton(self.owner_id, left_item, defs.Attachement.LEFT_ITEM)
 
         right_item = self.inventory.get_hand(defs.Hand.RIGHT)
-        context.world.attach_skeleton(self.owner_id, right_item, defs.Attachement.RIGHT_ITEM)
+        # TODO: attach skeleton:
+        # context.world.attach_skeleton(self.owner_id, right_item, defs.Attachement.RIGHT_ITEM)
 
         self.expire()
 
@@ -192,12 +220,12 @@ class DamageAnimation(Animation):
         self.hand = action.hand
 
     def tick(self, interval, context: animating.AnimationContext) -> None:
-        # Play animations
-        if self.hand == defs.Hand.LEFT:
-            context.world.play_animation(self.dealer_id, AnimationName.SWING_LEFT)
-        else:
-            context.world.play_animation(self.dealer_id, AnimationName.SWING_RIGHT)
-        context.world.play_animation(self.receiver_id, AnimationName.DAMAGED)
+        # TODO: Play animations:
+        # if self.hand == defs.Hand.LEFT:
+        #    context.world.play_animation(self.dealer_id, AnimationName.SWING_LEFT)
+        # else:
+        #    context.world.play_animation(self.dealer_id, AnimationName.SWING_RIGHT)
+        # context.world.play_animation(self.receiver_id, AnimationName.DAMAGED)
 
         # Play sounds
         context.sounds.play(self.variant.value)
@@ -207,23 +235,22 @@ class DamageAnimation(Animation):
 
 
 _ANIMATION_CONSTRUCTORS: Dict[type, Any] = {
-        actions.ConfigurationAction: ConfigurationAnimation,
-        actions.CraftStartAction: CraftStartAnimation,
-        actions.CraftEndAction: CraftEndAnimation,
-        actions.CreateActorsAction: CreateActorsAnimation,
-        actions.DeleteActorsAction: DeleteActorsAnimation,
-        actions.MovementAction: MovementAnimation,
-        actions.LocalizeAction: LocalizeAnimation,
-        actions.StatUpdateAction: StatUpdateAnimation,
-        actions.PickStartAction: PickStartAnimation,
-        actions.PickEndAction: PickEndAnimation,
-        actions.UpdateInventoryAction: UpdateInventoryAnimation,
-        actions.DamageAction: DamageAnimation,
-    }
+    actions.ConfigurationAction: ConfigurationAnimation,
+    actions.CraftStartAction: CraftStartAnimation,
+    actions.CraftEndAction: CraftEndAnimation,
+    actions.CreateActorsAction: CreateActorsAnimation,
+    actions.DeleteActorsAction: DeleteActorsAnimation,
+    actions.MovementAction: MovementAnimation,
+    actions.LocalizeAction: LocalizeAnimation,
+    actions.StatUpdateAction: StatUpdateAnimation,
+    actions.PickStartAction: PickStartAnimation,
+    actions.PickEndAction: PickEndAnimation,
+    actions.UpdateInventoryAction: UpdateInventoryAnimation,
+    actions.DamageAction: DamageAnimation,
+}
 
 
 def animation_from_action(action: actions.Action) -> Optional[Animation]:
     """Converts an `Action` into an `Animation`."""
 
     return _ANIMATION_CONSTRUCTORS[type(action)](action)
-

@@ -21,8 +21,15 @@ class ImageFileContent(formations.Content):
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
         GL.glTexImage2D(
-            GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, image.size[0], image.size[1], 0,
-            GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, data,
+            GL.GL_TEXTURE_2D,
+            0,
+            GL.GL_RGBA,
+            image.size[0],
+            image.size[1],
+            0,
+            GL.GL_RGBA,
+            GL.GL_UNSIGNED_BYTE,
+            data,
         )
 
         super().__init__(formations.Size(image.size[0], image.size[1]), texture_id)
@@ -44,15 +51,15 @@ class Label(formations.Formation):
     FONT = "DejaVuSans.ttf"
 
     def __init__(
-            self,
-            text='',
-            margin=0,
-            padding=4,
-            fg_color=formations.Color(1.0, 1.0, 1.0, 1.0),
-            bg_color=formations.Color(0.0, 0.0, 0.0, 1.0),
-            font_size=12,
-            gravity=formations.Gravity.START
-        ) -> None:
+        self,
+        text="",
+        margin=0,
+        padding=4,
+        fg_color=formations.Color(1.0, 1.0, 1.0, 1.0),
+        bg_color=formations.Color(0.0, 0.0, 0.0, 1.0),
+        font_size=12,
+        gravity=formations.Gravity.START,
+    ) -> None:
         super().__init__()
         self._text = text
         self._margin = margin
@@ -114,12 +121,13 @@ class Label(formations.Formation):
         elif self._gravity == formations.Gravity.END:
             position = inner_width - text_width
 
-        image = Image.new('RGBA', (inner_width, inner_height), bg_color)
+        image = Image.new("RGBA", (inner_width, inner_height), bg_color)
         draw = ImageDraw.Draw(image)
         draw.text((position, self._padding), self._text, fill=fg_color, font=self._font)
 
         # NOTE: Converting image data to numpy array has bad performance. `tinyarray` used here
         # seems to improve the performance.
+        # TODO: Maybe move text rendering to `edgin_around_rendering`?
         data1 = image.getdata()
         data2 = tinyarray.array(data1)
         data3 = numpy.array(data2)
@@ -128,8 +136,15 @@ class Label(formations.Formation):
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
         GL.glTexImage2D(
-            GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, inner_width, inner_height, 0,
-            GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, data3,
+            GL.GL_TEXTURE_2D,
+            0,
+            GL.GL_RGBA,
+            inner_width,
+            inner_height,
+            0,
+            GL.GL_RGBA,
+            GL.GL_UNSIGNED_BYTE,
+            data3,
         )
 
         self.set_content(formations.Content(size, self._texture_id))
@@ -143,13 +158,12 @@ class Label(formations.Formation):
         return asscent + descent + 2 * (self._margin + self._padding)
 
     def prepare_plains(
-            self,
-            parent_position=formations.Position(0.0, 0.0),
-        ) -> List[formations.Plain]:
+        self,
+        parent_position=formations.Position(0.0, 0.0),
+    ) -> List[formations.Plain]:
         self._needs_update = False
         margin_size = 2 * self._margin
         margin_offset = formations.Position(self._margin, self._margin)
         position = parent_position + self._position + margin_offset
         size = formations.Size(self._size.width - margin_size, self._size.height - margin_size)
         return [formations.Plain(self._texture_id, None, position, size)]
-

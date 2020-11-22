@@ -3,25 +3,15 @@
 function usage() {
     echo 'Commands:'
     echo ' - mypy - runs mypy checker in the main app'
-    echo ' - tests - runs unit tests'
+    echo ' - black - runs `black` code formatter'
 }
 
 function run_mypy() {
-    python -m mypy edgin_around.py edgin_around_server.py preview.py --show-error-codes $@
+    python -m mypy edgin_around.py $@ --show-error-codes
 }
 
-function run_mypy_tests() {
-    python -m mypy test/test_*.py --show-error-codes $@
-}
-
-function run_tests() {
-    python -m unittest $@
-}
-
-function run_pack_resources() {
-    ZIPFILE=edgin_around_resources.zip
-    rm -f $ZIPFILE
-    zip -r $ZIPFILE res -x *.saml
+function run_black() {
+    python -m black . --config black.toml
 }
 
 if (( $# > 0 )); then
@@ -32,11 +22,8 @@ if (( $# > 0 )); then
         'mypy')
             run_mypy $@
             ;;
-        'tests')
-            run_mypy && run_mypy_tests && run_tests $@
-            ;;
-        'pack-res')
-            run_pack_resources
+        'black')
+            run_black $@
             ;;
         *)
             echo "Command \"$command\" unknown."

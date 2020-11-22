@@ -2,7 +2,8 @@ import socket, threading
 
 import marshmallow
 
-from . import actions, animations, animator, defs, utils
+from edgin_around_api import actions, defs
+from . import animations, animator, utils
 
 from typing import List, Optional
 
@@ -11,10 +12,8 @@ class ConnectorThread(threading.Thread):
     """Thread for handling messages coming from the server."""
 
     def __init__(
-            self,
-            sock: socket.socket,
-            event: threading.Event,
-            animator: animator.Animator) -> None:
+        self, sock: socket.socket, event: threading.Event, animator: animator.Animator
+    ) -> None:
         super().__init__()
         self._sock = sock
         self._event = event
@@ -71,4 +70,3 @@ class Connector:
         self._event.clear()
         if self._thread is not None:
             self._thread.join()
-
