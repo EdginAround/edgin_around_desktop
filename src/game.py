@@ -1,5 +1,5 @@
 import edgin_around_rendering as ear
-from . import animator, connector, controls, gui, lan, proxy, window
+from . import thruster, connector, controls, gui, lan, proxy, window
 
 
 class Game:
@@ -14,10 +14,10 @@ class Game:
         self.world = ear.WorldExpositor(resource_dir, (600, 800))
         self.gui = gui.Gui(self.world, self.scene, self.proxy, resource_dir)
         self.controls = controls.Controls(self.world, self.gui, self.proxy)
-        self.animator = animator.Animator(self.scene, self.world, self.gui, resource_dir)
+        self.thruster = thruster.Thruster(self.scene, self.world, self.gui, resource_dir)
 
-        self.window = window.Window(self.gui, self.controls, self.animator)
-        self.connector = connector.Connector(self.animator)
+        self.window = window.Window(self.gui, self.controls, self.thruster)
+        self.connector = connector.Connector(self.thruster)
 
     def run(self) -> None:
         print("Welcome to Edgin' Around!")

@@ -4,10 +4,10 @@ from typing import Any, Dict, Iterable, List, Optional, TYPE_CHECKING
 
 import edgin_around_rendering as ear
 from edgin_around_api import actions, defs, geometry, inventory
-from . import animating
+from . import thrusting
 
 
-class AnimationName:
+class MotiveName:
     IDLE = "idle"
     WALK = "walk"
     PICK = "pick"
@@ -16,7 +16,7 @@ class AnimationName:
     SWING_RIGHT = "swing_right"
 
 
-class Animation(abc.ABC):
+class Motive(abc.ABC):
     def __init__(self, timeout):
         self._expired = False
         self.start_time = time.monotonic()
@@ -41,17 +41,17 @@ class Animation(abc.ABC):
         self._expired = True
 
     @abc.abstractmethod
-    def tick(self, interval, context: animating.AnimationContext) -> None:
-        raise NotImplementedError("This animation is not implemented")
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        raise NotImplementedError("This motive is not implemented")
 
 
-class ConfigurationAnimation(Animation):
+class ConfigurationMotive(Motive):
     def __init__(self, action: actions.ConfigurationAction) -> None:
         super().__init__(None)
         self.hero_actor_id = action.hero_actor_id
         self.elevation = action.elevation
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         elevation = ear.ElevationFunction(self.elevation.radius)
         for terrain in self.elevation.terrain:
             origin = terrain.get_origin()
@@ -61,30 +61,30 @@ class ConfigurationAnimation(Animation):
         self.expire()
 
 
-class CraftStartAnimation(Animation):
+class CraftStartMotive(Motive):
     def __init__(self, action: actions.CraftStartAction) -> None:
         super().__init__(None)
         self.crafter_id = action.crafter_id
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         self.expire()
 
 
-class CraftEndAnimation(Animation):
+class CraftEndMotive(Motive):
     def __init__(self, action: actions.CraftEndAction) -> None:
         super().__init__(None)
         self.crafter_id = action.crafter_id
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         self.expire()
 
 
-class CreateActorsAnimation(Animation):
+class CreateActorsMotive(Motive):
     def __init__(self, action: actions.CreateActorsAction) -> None:
         super().__init__(None)
         self.actors = action.actors
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         actors = list()
         for a in self.actors:
             position: Optional[ear.Point]
@@ -100,18 +100,18 @@ class CreateActorsAnimation(Animation):
         self.expire()
 
 
-class DeleteActorsAnimation(Animation):
+class DeleteActorsMotive(Motive):
     def __init__(self, action: actions.DeleteActorsAction) -> None:
         super().__init__(None)
         self.actor_ids = action.actor_ids
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         context.scene.delete_actors(self.actor_ids)
         context.world.delete_renderers(self.actor_ids)
         self.expire()
 
 
-class MovementAnimation(Animation):
+class MovementMotive(Motive):
     def __init__(self, action: actions.MovementAction) -> None:
         super().__init__(action.duration)
         self.actor_id = action.actor_id
@@ -122,7 +122,7 @@ class MovementAnimation(Animation):
     def get_actor_id(self) -> defs.ActorId:
         return self.actor_id
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         distance = self.speed * interval
 
         old_position = context.scene.get_actor_position(self.actor_id)
@@ -133,12 +133,12 @@ class MovementAnimation(Animation):
 
         # TODO: Play animation
         # if self._tick_count == 0:
-        #     context.world.play_animation(self.actor_id, AnimationName.WALK)
+        #     context.world.play_animation(self.actor_id, MotiveName.WALK)
 
         self._tick_count += 1
 
 
-class LocalizeAnimation(Animation):
+class LocalizeMotive(Motive):
     def __init__(self, action: actions.LocalizeAction) -> None:
         super().__init__(None)
         self.actor_id = action.actor_id
@@ -147,55 +147,55 @@ class LocalizeAnimation(Animation):
     def get_actor_id(self) -> defs.ActorId:
         return self.actor_id
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         position = ear.Point(self.position.theta, self.position.phi)
         context.scene.set_actor_position(self.actor_id, position)
         # TODO: Play animation:
-        # context.world.play_animation(self.actor_id, AnimationName.IDLE)
+        # context.world.play_animation(self.actor_id, MotiveName.IDLE)
         self.expire()
 
 
-class StatUpdateAnimation(Animation):
+class StatUpdateMotive(Motive):
     def __init__(self, action: actions.StatUpdateAction) -> None:
         super().__init__(None)
         self.actor_id = action.actor_id
         self.stats = action.stats
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         context.gui.set_stats(self.stats)
         self.expire()
 
 
-class PickStartAnimation(Animation):
+class PickStartMotive(Motive):
     def __init__(self, action: actions.PickStartAction) -> None:
         super().__init__(None)
         self.actor_id = action.who
         self.item_id = action.what
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         # TODO: Play animation:
-        # context.world.play_animation(self.actor_id, AnimationName.PICK)
+        # context.world.play_animation(self.actor_id, MotiveName.PICK)
         self.expire()
 
 
-class PickEndAnimation(Animation):
+class PickEndMotive(Motive):
     def __init__(self, action: actions.PickEndAction) -> None:
         super().__init__(None)
         self.actor_id = action.who
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         # TODO: Play animation:
-        # context.world.play_animation(self.actor_id, AnimationName.IDLE)
+        # context.world.play_animation(self.actor_id, MotiveName.IDLE)
         self.expire()
 
 
-class UpdateInventoryAnimation(Animation):
+class UpdateInventoryMotive(Motive):
     def __init__(self, action: actions.UpdateInventoryAction) -> None:
         super().__init__(None)
         self.owner_id = action.owner_id
         self.inventory = action.inventory
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         context.gui.set_inventory(self.inventory)
 
         context.scene.hide_actors(self.inventory.get_all_ids())
@@ -211,7 +211,7 @@ class UpdateInventoryAnimation(Animation):
         self.expire()
 
 
-class DamageAnimation(Animation):
+class DamageMotive(Motive):
     def __init__(self, action: actions.DamageAction) -> None:
         super().__init__(None)
         self.dealer_id = action.dealer_id
@@ -219,13 +219,13 @@ class DamageAnimation(Animation):
         self.variant = action.variant
         self.hand = action.hand
 
-    def tick(self, interval, context: animating.AnimationContext) -> None:
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
         # TODO: Play animations:
         # if self.hand == defs.Hand.LEFT:
-        #    context.world.play_animation(self.dealer_id, AnimationName.SWING_LEFT)
+        #    context.world.play_animation(self.dealer_id, MotiveName.SWING_LEFT)
         # else:
-        #    context.world.play_animation(self.dealer_id, AnimationName.SWING_RIGHT)
-        # context.world.play_animation(self.receiver_id, AnimationName.DAMAGED)
+        #    context.world.play_animation(self.dealer_id, MotiveName.SWING_RIGHT)
+        # context.world.play_animation(self.receiver_id, MotiveName.DAMAGED)
 
         # Play sounds
         context.sounds.play(self.variant.value)
@@ -235,22 +235,22 @@ class DamageAnimation(Animation):
 
 
 _ANIMATION_CONSTRUCTORS: Dict[type, Any] = {
-    actions.ConfigurationAction: ConfigurationAnimation,
-    actions.CraftStartAction: CraftStartAnimation,
-    actions.CraftEndAction: CraftEndAnimation,
-    actions.CreateActorsAction: CreateActorsAnimation,
-    actions.DeleteActorsAction: DeleteActorsAnimation,
-    actions.MovementAction: MovementAnimation,
-    actions.LocalizeAction: LocalizeAnimation,
-    actions.StatUpdateAction: StatUpdateAnimation,
-    actions.PickStartAction: PickStartAnimation,
-    actions.PickEndAction: PickEndAnimation,
-    actions.UpdateInventoryAction: UpdateInventoryAnimation,
-    actions.DamageAction: DamageAnimation,
+    actions.ConfigurationAction: ConfigurationMotive,
+    actions.CraftStartAction: CraftStartMotive,
+    actions.CraftEndAction: CraftEndMotive,
+    actions.CreateActorsAction: CreateActorsMotive,
+    actions.DeleteActorsAction: DeleteActorsMotive,
+    actions.MovementAction: MovementMotive,
+    actions.LocalizeAction: LocalizeMotive,
+    actions.StatUpdateAction: StatUpdateMotive,
+    actions.PickStartAction: PickStartMotive,
+    actions.PickEndAction: PickEndMotive,
+    actions.UpdateInventoryAction: UpdateInventoryMotive,
+    actions.DamageAction: DamageMotive,
 }
 
 
-def animation_from_action(action: actions.Action) -> Optional[Animation]:
-    """Converts an `Action` into an `Animation`."""
+def motive_from_action(action: actions.Action) -> Optional[Motive]:
+    """Converts an `Action` into a `Motive`."""
 
     return _ANIMATION_CONSTRUCTORS[type(action)](action)
