@@ -1,6 +1,6 @@
 import pyglet
 
-from . import animator, controls, gui
+from . import thruster, controls, gui
 
 
 class Window(pyglet.window.Window):
@@ -10,14 +10,14 @@ class Window(pyglet.window.Window):
         self,
         gui: gui.Gui,
         controls: controls.Controls,
-        animator: animator.Animator,
+        thruster: thruster.Thruster,
     ) -> None:
         super().__init__(resizable=True)
         self.maximize()
 
         self._gui = gui
         self._controls = controls
-        self._animator = animator
+        self._thruster = thruster
 
     def run(self) -> None:
         pyglet.app.run()
@@ -43,7 +43,7 @@ class Window(pyglet.window.Window):
 
     def on_draw(self) -> None:
         self._controls.handle_draw()
-        self._animator.animate()
+        self._thruster.thrust()
         self._gui.draw()
         self._schedule_redraw()
 

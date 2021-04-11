@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class AnimationContext:
+class MotiveContext:
     scene: "ear.Scene"
     world: "ear.WorldExpositor"
     gui: "gui.Gui"

@@ -3,7 +3,7 @@ import socket, threading
 import marshmallow
 
 from edgin_around_api import actions, defs
-from . import animations, animator, utils
+from . import motives, thruster, utils
 
 from typing import List, Optional
 
@@ -12,12 +12,12 @@ class ConnectorThread(threading.Thread):
     """Thread for handling messages coming from the server."""
 
     def __init__(
-        self, sock: socket.socket, event: threading.Event, animator: animator.Animator
+        self, sock: socket.socket, event: threading.Event, thruster: thruster.Thruster
     ) -> None:
         super().__init__()
         self._sock = sock
         self._event = event
-        self._animator = animator
+        self._thruster = thruster
         self._processor = utils.SocketProcessor()
 
     def run(self) -> None:
@@ -33,19 +33,19 @@ class ConnectorThread(threading.Thread):
         if action is None:
             return
 
-        animation = animations.animation_from_action(action)
-        if animation is None:
+        motive = motives.motive_from_action(action)
+        if motive is None:
             return
 
-        self._animator.add(animation)
+        self._thruster.add(motive)
 
 
 class Connector:
     """Prepares and manages the thread handling messages from the server."""
 
-    def __init__(self, animator: animator.Animator) -> None:
+    def __init__(self, thruster: thruster.Thruster) -> None:
         self._event = threading.Event()
-        self._animator = animator
+        self._thruster = thruster
         self._thread: Optional[ConnectorThread] = None
 
     def start(self, address: str) -> socket.socket:
@@ -57,7 +57,7 @@ class Connector:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((address, defs.PORT_DATA))
 
-        self._thread = ConnectorThread(sock, self._event, self._animator)
+        self._thread = ConnectorThread(sock, self._event, self._thruster)
 
         self._event.set()
         self._thread.start()
