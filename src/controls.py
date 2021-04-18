@@ -32,8 +32,12 @@ class Controls:
             (key.D, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.5 * pi),
             (key.S, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 1.0 * pi),
             (key.W, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.0 * pi),
-            (key.Z, NOMODS): lambda: proxy.send_hand_activation(defs.Hand.LEFT, None),
-            (key.X, NOMODS): lambda: proxy.send_hand_activation(defs.Hand.RIGHT, None),
+            (key.Z, NOMODS): lambda: proxy.send_hand_activation(
+                defs.Hand.LEFT, world.get_highlighted_actor_id()
+            ),
+            (key.X, NOMODS): lambda: proxy.send_hand_activation(
+                defs.Hand.RIGHT, world.get_highlighted_actor_id()
+            ),
             (key.LEFT, NOMODS): lambda: proxy.send_motion(world.get_bearing() - 0.5 * pi),
             (key.RIGHT, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.5 * pi),
             (key.DOWN, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 1.0 * pi),

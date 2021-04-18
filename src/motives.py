@@ -6,6 +6,9 @@ import edgin_around_rendering as ear
 from edgin_around_api import actions, defs, geometry, inventory
 from . import thrusting
 
+# TODO: Move constants to the API module.
+MAX_PICK_DISTANCE = 1.0
+
 
 class MotiveName:
     IDLE = "idle"
@@ -43,6 +46,19 @@ class Motive(abc.ABC):
     @abc.abstractmethod
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
         raise NotImplementedError("This motive is not implemented")
+
+    def refresh_highlight(self, context: thrusting.MotiveContext) -> None:
+        hero_id = context.scene.get_hero_id()
+        hero_position = context.scene.get_actor_position(hero_id)
+        if hero_position is None:
+            return
+
+        actors = context.scene.find_closest_actors(hero_position, MAX_PICK_DISTANCE)
+        # The hero will always be the closest actor
+        if len(actors) > 1:
+            context.world.set_highlighted_actor_id(actors[1])
+        else:
+            context.world.remove_highlight()
 
 
 class ConfigurationMotive(Motive):
@@ -97,6 +113,7 @@ class CreateActorsMotive(Motive):
 
         context.scene.create_actors(actors)
         context.world.create_renderers(actors)
+        self.refresh_highlight(context)
         self.expire()
 
 
@@ -108,6 +125,7 @@ class DeleteActorsMotive(Motive):
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
         context.scene.delete_actors(self.actor_ids)
         context.world.delete_renderers(self.actor_ids)
+        self.refresh_highlight(context)
         self.expire()
 
 
@@ -126,15 +144,18 @@ class MovementMotive(Motive):
         distance = self.speed * interval
 
         old_position = context.scene.get_actor_position(self.actor_id)
+        if old_position is None:
+            return
+
         old_point = geometry.Point(old_position.get_theta(), old_position.get_phi())
         new_point = old_point.moved_by(distance, self.bearing, context.scene.get_radius())
         new_position = ear.Point(new_point.theta, new_point.phi)
         context.scene.set_actor_position(self.actor_id, new_position)
 
-        # TODO: Play animation
-        # if self._tick_count == 0:
-        #     context.world.play_animation(self.actor_id, MotiveName.WALK)
+        if self._tick_count == 0:
+            context.world.play_animation(self.actor_id, MotiveName.WALK)
 
+        self.refresh_highlight(context)
         self._tick_count += 1
 
 
@@ -150,8 +171,8 @@ class LocalizeMotive(Motive):
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
         position = ear.Point(self.position.theta, self.position.phi)
         context.scene.set_actor_position(self.actor_id, position)
-        # TODO: Play animation:
-        # context.world.play_animation(self.actor_id, MotiveName.IDLE)
+        context.world.play_animation(self.actor_id, MotiveName.IDLE)
+        self.refresh_highlight(context)
         self.expire()
 
 
@@ -173,8 +194,7 @@ class PickStartMotive(Motive):
         self.item_id = action.what
 
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        # TODO: Play animation:
-        # context.world.play_animation(self.actor_id, MotiveName.PICK)
+        context.world.play_animation(self.actor_id, MotiveName.PICK)
         self.expire()
 
 
@@ -184,8 +204,7 @@ class PickEndMotive(Motive):
         self.actor_id = action.who
 
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        # TODO: Play animation:
-        # context.world.play_animation(self.actor_id, MotiveName.IDLE)
+        context.world.play_animation(self.actor_id, MotiveName.IDLE)
         self.expire()
 
 
@@ -220,12 +239,11 @@ class DamageMotive(Motive):
         self.hand = action.hand
 
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        # TODO: Play animations:
-        # if self.hand == defs.Hand.LEFT:
-        #    context.world.play_animation(self.dealer_id, MotiveName.SWING_LEFT)
-        # else:
-        #    context.world.play_animation(self.dealer_id, MotiveName.SWING_RIGHT)
-        # context.world.play_animation(self.receiver_id, MotiveName.DAMAGED)
+        if self.hand == defs.Hand.LEFT:
+            context.world.play_animation(self.dealer_id, MotiveName.SWING_LEFT)
+        else:
+            context.world.play_animation(self.dealer_id, MotiveName.SWING_RIGHT)
+        context.world.play_animation(self.receiver_id, MotiveName.DAMAGED)
 
         # Play sounds
         context.sounds.play(self.variant.value)

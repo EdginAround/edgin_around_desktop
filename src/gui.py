@@ -677,9 +677,7 @@ class Gui(formations.Stack):
         self.on_release(formations.Position(x, y), button, modifiers)
 
     def handle_mouse_motion(self, x: float, y: float) -> None:
-        # TODO: All mouse motion events are passed to `world` now. Pass them to all formations
-        # and implement `enter` and `leave` events.
-        self._world.highlight(int(x), int(y))
+        pass
 
     def draw(self) -> None:
         self.reallocate_if_needed()
