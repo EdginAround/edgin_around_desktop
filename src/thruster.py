@@ -1,4 +1,4 @@
-import time
+import time, threading
 
 from typing import Dict, List
 
@@ -21,29 +21,32 @@ class Thruster:
         self.general_motives: List[motives.Motive] = list()
         self.actor_motives: Dict[defs.ActorId, motives.Motive] = dict()
         self.prev_tick = time.monotonic()
+        self.mutex = threading.Lock()
 
     def thrust(self) -> None:
         now = time.monotonic()
         tick_interval = now - self.prev_tick
 
-        # Renove expired enimations
-        self._remove_expired_motives()
+        with self.mutex:
+            # Renove expired enimations
+            self._remove_expired_motives()
 
-        # Perform one motive clock tick
-        for motive in self.general_motives:
-            motive.tick(tick_interval, self.context)
+            # Perform one motive clock tick
+            for motive in self.general_motives:
+                motive.tick(tick_interval, self.context)
 
-        for motive in self.actor_motives.values():
-            motive.tick(tick_interval, self.context)
+            for motive in self.actor_motives.values():
+                motive.tick(tick_interval, self.context)
 
         self.prev_tick = now
 
     def add(self, motive: motives.Motive) -> None:
         actor_id = motive.get_actor_id()
-        if actor_id is not None:
-            self.actor_motives[actor_id] = motive
-        else:
-            self.general_motives.append(motive)
+        with self.mutex:
+            if actor_id is not None:
+                self.actor_motives[actor_id] = motive
+            else:
+                self.general_motives.append(motive)
 
     def _remove_expired_motives(self) -> None:
         expired: List[defs.ActorId] = list()
