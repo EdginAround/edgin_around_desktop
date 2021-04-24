@@ -220,12 +220,10 @@ class UpdateInventoryMotive(Motive):
         context.scene.hide_actors(self.inventory.get_all_ids())
 
         left_item = self.inventory.get_hand(defs.Hand.LEFT)
-        # TODO: attach skeleton:
-        # context.world.attach_skeleton(self.owner_id, left_item, defs.Attachement.LEFT_ITEM)
+        context.world.attach_actor(defs.Attachement.LEFT_ITEM.value, self.owner_id, left_item)
 
         right_item = self.inventory.get_hand(defs.Hand.RIGHT)
-        # TODO: attach skeleton:
-        # context.world.attach_skeleton(self.owner_id, right_item, defs.Attachement.RIGHT_ITEM)
+        context.world.attach_actor(defs.Attachement.RIGHT_ITEM.value, self.owner_id, right_item)
 
         self.expire()
 
