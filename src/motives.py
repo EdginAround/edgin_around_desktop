@@ -10,7 +10,7 @@ from . import thrusting
 MAX_PICK_DISTANCE = 1.0
 
 
-class MotiveName:
+class AnimationName:
     IDLE = "idle"
     WALK = "walk"
     PICK = "pick"
@@ -153,7 +153,7 @@ class MovementMotive(Motive):
         context.scene.set_actor_position(self.actor_id, new_position)
 
         if self._tick_count == 0:
-            context.world.play_animation(self.actor_id, MotiveName.WALK)
+            context.world.play_animation(self.actor_id, AnimationName.WALK)
 
         self.refresh_highlight(context)
         self._tick_count += 1
@@ -171,7 +171,7 @@ class LocalizeMotive(Motive):
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
         position = ear.Point(self.position.theta, self.position.phi)
         context.scene.set_actor_position(self.actor_id, position)
-        context.world.play_animation(self.actor_id, MotiveName.IDLE)
+        context.world.play_animation(self.actor_id, AnimationName.IDLE)
         self.refresh_highlight(context)
         self.expire()
 
@@ -194,7 +194,7 @@ class PickStartMotive(Motive):
         self.item_id = action.what
 
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        context.world.play_animation(self.actor_id, MotiveName.PICK)
+        context.world.play_animation(self.actor_id, AnimationName.PICK)
         self.expire()
 
 
@@ -204,7 +204,7 @@ class PickEndMotive(Motive):
         self.actor_id = action.who
 
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        context.world.play_animation(self.actor_id, MotiveName.IDLE)
+        context.world.play_animation(self.actor_id, AnimationName.IDLE)
         self.expire()
 
 
@@ -238,10 +238,10 @@ class DamageMotive(Motive):
 
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
         if self.hand == defs.Hand.LEFT:
-            context.world.play_animation(self.dealer_id, MotiveName.SWING_LEFT)
+            context.world.play_animation(self.dealer_id, AnimationName.SWING_LEFT)
         else:
-            context.world.play_animation(self.dealer_id, MotiveName.SWING_RIGHT)
-        context.world.play_animation(self.receiver_id, MotiveName.DAMAGED)
+            context.world.play_animation(self.dealer_id, AnimationName.SWING_RIGHT)
+        context.world.play_animation(self.receiver_id, AnimationName.DAMAGED)
 
         # Play sounds
         context.sounds.play(self.variant.value)
