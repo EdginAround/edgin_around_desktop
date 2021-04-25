@@ -32,12 +32,6 @@ class Controls:
             (key.D, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.5 * pi),
             (key.S, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 1.0 * pi),
             (key.W, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.0 * pi),
-            (key.Z, NOMODS): lambda: proxy.send_hand_activation(
-                defs.Hand.LEFT, world.get_highlighted_actor_id()
-            ),
-            (key.X, NOMODS): lambda: proxy.send_hand_activation(
-                defs.Hand.RIGHT, world.get_highlighted_actor_id()
-            ),
             (key.LEFT, NOMODS): lambda: proxy.send_motion(world.get_bearing() - 0.5 * pi),
             (key.RIGHT, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 0.5 * pi),
             (key.DOWN, NOMODS): lambda: proxy.send_motion(world.get_bearing() + 1.0 * pi),
@@ -51,6 +45,12 @@ class Controls:
             (key.NUM_ADD, NOMODS): lambda: world.zoom_by(5),
             (key.MINUS, NOMODS): lambda: world.zoom_by(-5),
             (key.NUM_SUBTRACT, NOMODS): lambda: world.zoom_by(-5),
+            (key.Z, NOMODS): lambda: proxy.send_hand_activation(
+                defs.Hand.LEFT, world.get_highlighted_actor_id()
+            ),
+            (key.X, NOMODS): lambda: proxy.send_hand_activation(
+                defs.Hand.RIGHT, world.get_highlighted_actor_id()
+            ),
             (key.C, NOMODS): lambda: gui.toggle_crafting(),
             (key._1, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 0),
             (key._2, CTRL): lambda: proxy.send_inventory_swap(defs.Hand.LEFT, 1),
