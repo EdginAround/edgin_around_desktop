@@ -20,17 +20,12 @@ class Proxy:
     def send_stop(self) -> None:
         """Send `stop` move."""
 
-        self._send_move(moves.StopMove())
-
-    def send_conclude(self) -> None:
-        """Send `conclude` move."""
-
-        self._send_move(moves.ConcludeMove())
+        self._send_move(moves.MotionStopMove())
 
     def send_motion(self, bearing) -> None:
         """Send `motion` move."""
 
-        self._send_move(moves.StartMotionMove(bearing))
+        self._send_move(moves.MotionStartMove(bearing))
 
     def send_hand_activation(self, hand: defs.Hand, item_id: Optional[defs.ActorId]) -> None:
         """Send `hand_activation` move."""

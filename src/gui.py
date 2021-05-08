@@ -54,9 +54,6 @@ class WorldFormation(formations.Formation):
         return formations.EventResult.HANDLED
 
     def on_release(self, position: formations.Position, *args) -> formations.EventResult:
-        button, modifiers = args
-        if button in (pyglet.window.mouse.LEFT, pyglet.window.mouse.RIGHT):
-            self._proxy.send_conclude()
         return formations.EventResult.HANDLED
 
 
