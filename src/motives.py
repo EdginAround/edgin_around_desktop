@@ -61,42 +61,8 @@ class Motive(abc.ABC):
             context.world.remove_highlight()
 
 
-class ConfigurationMotive(Motive):
-    def __init__(self, action: actions.ConfigurationAction) -> None:
-        super().__init__(None)
-        self.hero_actor_id = action.hero_actor_id
-        self.elevation = action.elevation
-
-    def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        elevation = ear.ElevationFunction(self.elevation.radius)
-        for terrain in self.elevation.terrain:
-            origin = terrain.get_origin()
-            elevation.add_terrain(terrain.get_name(), origin.theta, origin.phi)
-
-        context.scene.configure(self.hero_actor_id, elevation)
-        self.expire()
-
-
-class CraftStartMotive(Motive):
-    def __init__(self, action: actions.CraftStartAction) -> None:
-        super().__init__(None)
-        self.crafter_id = action.crafter_id
-
-    def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        self.expire()
-
-
-class CraftEndMotive(Motive):
-    def __init__(self, action: actions.CraftEndAction) -> None:
-        super().__init__(None)
-        self.crafter_id = action.crafter_id
-
-    def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        self.expire()
-
-
-class CreateActorsMotive(Motive):
-    def __init__(self, action: actions.CreateActorsAction) -> None:
+class ActorCreationMotive(Motive):
+    def __init__(self, action: actions.ActorCreationAction) -> None:
         super().__init__(None)
         self.actors = action.actors
 
@@ -117,8 +83,8 @@ class CreateActorsMotive(Motive):
         self.expire()
 
 
-class DeleteActorsMotive(Motive):
-    def __init__(self, action: actions.DeleteActorsAction) -> None:
+class ActorDeletionMotive(Motive):
+    def __init__(self, action: actions.ActorDeletionAction) -> None:
         super().__init__(None)
         self.actor_ids = action.actor_ids
 
@@ -129,8 +95,81 @@ class DeleteActorsMotive(Motive):
         self.expire()
 
 
-class MovementMotive(Motive):
-    def __init__(self, action: actions.MovementAction) -> None:
+class ConfigurationMotive(Motive):
+    def __init__(self, action: actions.ConfigurationAction) -> None:
+        super().__init__(None)
+        self.hero_actor_id = action.hero_actor_id
+        self.elevation = action.elevation
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        elevation = ear.ElevationFunction(self.elevation.radius)
+        for terrain in self.elevation.terrain:
+            origin = terrain.get_origin()
+            elevation.add_terrain(terrain.get_name(), origin.theta, origin.phi)
+
+        context.scene.configure(self.hero_actor_id, elevation)
+        self.expire()
+
+
+class CraftBeginMotive(Motive):
+    def __init__(self, action: actions.CraftBeginAction) -> None:
+        super().__init__(None)
+        self.crafter_id = action.crafter_id
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        self.expire()
+
+
+class CraftEndMotive(Motive):
+    def __init__(self, action: actions.CraftEndAction) -> None:
+        super().__init__(None)
+        self.crafter_id = action.crafter_id
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        self.expire()
+
+
+class DamageMotive(Motive):
+    def __init__(self, action: actions.DamageAction) -> None:
+        super().__init__(None)
+        self.dealer_id = action.dealer_id
+        self.receiver_id = action.receiver_id
+        self.variant = action.variant
+        self.hand = action.hand
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        if self.hand == defs.Hand.LEFT:
+            context.world.play_animation(self.dealer_id, AnimationName.SWING_LEFT)
+        else:
+            context.world.play_animation(self.dealer_id, AnimationName.SWING_RIGHT)
+        context.world.play_animation(self.receiver_id, AnimationName.DAMAGED)
+
+        # Play sounds
+        context.sounds.play(self.variant.value)
+
+        # Remove the animation
+        self.expire()
+
+
+class LocalizationMotive(Motive):
+    def __init__(self, action: actions.LocalizationAction) -> None:
+        super().__init__(None)
+        self.actor_id = action.actor_id
+        self.position = action.position
+
+    def get_actor_id(self) -> defs.ActorId:
+        return self.actor_id
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        position = ear.Point(self.position.theta, self.position.phi)
+        context.scene.set_actor_position(self.actor_id, position)
+        context.world.play_animation(self.actor_id, AnimationName.IDLE)
+        self.refresh_highlight(context)
+        self.expire()
+
+
+class MotionMotive(Motive):
+    def __init__(self, action: actions.MotionAction) -> None:
         super().__init__(action.duration)
         self.actor_id = action.actor_id
         self.speed = action.speed
@@ -159,36 +198,8 @@ class MovementMotive(Motive):
         self._tick_count += 1
 
 
-class LocalizeMotive(Motive):
-    def __init__(self, action: actions.LocalizeAction) -> None:
-        super().__init__(None)
-        self.actor_id = action.actor_id
-        self.position = action.position
-
-    def get_actor_id(self) -> defs.ActorId:
-        return self.actor_id
-
-    def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        position = ear.Point(self.position.theta, self.position.phi)
-        context.scene.set_actor_position(self.actor_id, position)
-        context.world.play_animation(self.actor_id, AnimationName.IDLE)
-        self.refresh_highlight(context)
-        self.expire()
-
-
-class StatUpdateMotive(Motive):
-    def __init__(self, action: actions.StatUpdateAction) -> None:
-        super().__init__(None)
-        self.actor_id = action.actor_id
-        self.stats = action.stats
-
-    def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        context.gui.set_stats(self.stats)
-        self.expire()
-
-
-class PickStartMotive(Motive):
-    def __init__(self, action: actions.PickStartAction) -> None:
+class PickBeginMotive(Motive):
+    def __init__(self, action: actions.PickBeginAction) -> None:
         super().__init__(None)
         self.actor_id = action.who
         self.item_id = action.what
@@ -208,8 +219,19 @@ class PickEndMotive(Motive):
         self.expire()
 
 
-class UpdateInventoryMotive(Motive):
-    def __init__(self, action: actions.UpdateInventoryAction) -> None:
+class StatUpdateMotive(Motive):
+    def __init__(self, action: actions.StatUpdateAction) -> None:
+        super().__init__(None)
+        self.actor_id = action.actor_id
+        self.stats = action.stats
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        context.gui.set_stats(self.stats)
+        self.expire()
+
+
+class InventoryUpdateMotive(Motive):
+    def __init__(self, action: actions.InventoryUpdateAction) -> None:
         super().__init__(None)
         self.owner_id = action.owner_id
         self.inventory = action.inventory
@@ -228,41 +250,19 @@ class UpdateInventoryMotive(Motive):
         self.expire()
 
 
-class DamageMotive(Motive):
-    def __init__(self, action: actions.DamageAction) -> None:
-        super().__init__(None)
-        self.dealer_id = action.dealer_id
-        self.receiver_id = action.receiver_id
-        self.variant = action.variant
-        self.hand = action.hand
-
-    def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        if self.hand == defs.Hand.LEFT:
-            context.world.play_animation(self.dealer_id, AnimationName.SWING_LEFT)
-        else:
-            context.world.play_animation(self.dealer_id, AnimationName.SWING_RIGHT)
-        context.world.play_animation(self.receiver_id, AnimationName.DAMAGED)
-
-        # Play sounds
-        context.sounds.play(self.variant.value)
-
-        # Remove the animation
-        self.expire()
-
-
 _ANIMATION_CONSTRUCTORS: Dict[type, Any] = {
+    actions.ActorCreationAction: ActorCreationMotive,
+    actions.ActorDeletionAction: ActorDeletionMotive,
     actions.ConfigurationAction: ConfigurationMotive,
-    actions.CraftStartAction: CraftStartMotive,
+    actions.CraftBeginAction: CraftBeginMotive,
     actions.CraftEndAction: CraftEndMotive,
-    actions.CreateActorsAction: CreateActorsMotive,
-    actions.DeleteActorsAction: DeleteActorsMotive,
-    actions.MovementAction: MovementMotive,
-    actions.LocalizeAction: LocalizeMotive,
-    actions.StatUpdateAction: StatUpdateMotive,
-    actions.PickStartAction: PickStartMotive,
-    actions.PickEndAction: PickEndMotive,
-    actions.UpdateInventoryAction: UpdateInventoryMotive,
     actions.DamageAction: DamageMotive,
+    actions.InventoryUpdateAction: InventoryUpdateMotive,
+    actions.LocalizationAction: LocalizationMotive,
+    actions.MotionAction: MotionMotive,
+    actions.PickBeginAction: PickBeginMotive,
+    actions.PickEndAction: PickEndMotive,
+    actions.StatUpdateAction: StatUpdateMotive,
 }
 
 
