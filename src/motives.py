@@ -151,6 +151,16 @@ class DamageMotive(Motive):
         self.expire()
 
 
+class IdleMotive(Motive):
+    def __init__(self, action: actions.IdleAction) -> None:
+        super().__init__(None)
+        self.actor_id = action.actor_id
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        context.world.play_animation(self.actor_id, AnimationName.IDLE)
+        self.expire()
+
+
 class LocalizationMotive(Motive):
     def __init__(self, action: actions.LocalizationAction) -> None:
         super().__init__(None)
@@ -257,6 +267,7 @@ _ANIMATION_CONSTRUCTORS: Dict[type, Any] = {
     actions.CraftBeginAction: CraftBeginMotive,
     actions.CraftEndAction: CraftEndMotive,
     actions.DamageAction: DamageMotive,
+    actions.IdleAction: IdleMotive,
     actions.InventoryUpdateAction: InventoryUpdateMotive,
     actions.LocalizationAction: LocalizationMotive,
     actions.MotionAction: MotionMotive,
