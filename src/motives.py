@@ -247,7 +247,8 @@ class InventoryUpdateMotive(Motive):
         self.inventory = action.inventory
 
     def tick(self, interval, context: thrusting.MotiveContext) -> None:
-        context.gui.set_inventory(self.inventory)
+        if self.owner_id == context.scene.get_hero_id():
+            context.gui.set_inventory(self.inventory)
 
         context.scene.hide_actors(self.inventory.get_all_ids())
 
