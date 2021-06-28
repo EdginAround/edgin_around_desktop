@@ -14,6 +14,7 @@ class AnimationName:
     IDLE = "idle"
     WALK = "walk"
     PICK = "pick"
+    EAT = "eat"
     DAMAGED = "damaged"
     SWING_LEFT = "swing_left"
     SWING_RIGHT = "swing_right"
@@ -95,6 +96,17 @@ class ActorDeletionMotive(Motive):
         self.expire()
 
 
+class ActorUpdateMotive(Motive):
+    def __init__(self, action: actions.ActorUpdateAction) -> None:
+        super().__init__(None)
+        self.actor_id = action.actor_id
+        self.form = action.form
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        context.world.select_variant(self.actor_id, self.form)
+        self.expire()
+
+
 class ConfigurationMotive(Motive):
     def __init__(self, action: actions.ConfigurationAction) -> None:
         super().__init__(None)
@@ -148,6 +160,47 @@ class DamageMotive(Motive):
         context.sounds.play(self.variant.value)
 
         # Remove the animation
+        self.expire()
+
+
+class EatBeginMotive(Motive):
+    def __init__(self, action: actions.EatBeginAction) -> None:
+        super().__init__(None)
+        self.eater_id = action.eater_id
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        context.world.play_animation(self.eater_id, AnimationName.EAT)
+        self.expire()
+
+
+class EatEndMotive(Motive):
+    def __init__(self, action: actions.EatEndAction) -> None:
+        super().__init__(None)
+        self.eater_id = action.eater_id
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        context.world.play_animation(self.eater_id, AnimationName.IDLE)
+        self.expire()
+
+
+class HarvestBeginMotive(Motive):
+    def __init__(self, action: actions.HarvestBeginAction) -> None:
+        super().__init__(None)
+        self.actor_id = action.who
+        self.item_id = action.what
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        context.world.play_animation(self.actor_id, AnimationName.PICK)
+        self.expire()
+
+
+class HarvestEndMotive(Motive):
+    def __init__(self, action: actions.HarvestEndAction) -> None:
+        super().__init__(None)
+        self.actor_id = action.who
+
+    def tick(self, interval, context: thrusting.MotiveContext) -> None:
+        context.world.play_animation(self.actor_id, AnimationName.IDLE)
         self.expire()
 
 
@@ -264,10 +317,15 @@ class InventoryUpdateMotive(Motive):
 _ANIMATION_CONSTRUCTORS: Dict[type, Any] = {
     actions.ActorCreationAction: ActorCreationMotive,
     actions.ActorDeletionAction: ActorDeletionMotive,
+    actions.ActorUpdateAction: ActorUpdateMotive,
     actions.ConfigurationAction: ConfigurationMotive,
     actions.CraftBeginAction: CraftBeginMotive,
     actions.CraftEndAction: CraftEndMotive,
     actions.DamageAction: DamageMotive,
+    actions.EatBeginAction: EatBeginMotive,
+    actions.EatEndAction: EatEndMotive,
+    actions.HarvestBeginAction: HarvestBeginMotive,
+    actions.HarvestEndAction: HarvestEndMotive,
     actions.IdleAction: IdleMotive,
     actions.InventoryUpdateAction: InventoryUpdateMotive,
     actions.LocalizationAction: LocalizationMotive,
