@@ -10,6 +10,7 @@ DIR_INVENTORY: str = "inventory"
 
 IMAGE_NAMES_INVENTORY: List[str] = [
     "axe",
+    "berry",
     "empty_slot",
     "gold",
     "hat",
